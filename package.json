@@ -1,0 +1,45 @@
+{
+  "name": "@pija-ab/swedbank-pay",
+  "version": "1.0.0-alpha1",
+  "main": "SwedbankPayClient.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "rimraf dist && tsc && copyfiles -u 1 \"src/**/*.{d.ts,json}\" dist",
+    "dev": "sh -c 'tsc --watch & nodemon -x \"copyfiles -u 1 \\\"src/**/*.{d.ts,json}\\\" dist\"; wait'",
+    "lint": "cross-env NODE_ENV=production run-p -cls --aggregate-output lint:*",
+    "lint:eslint-check": "cross-env NODE_ENV=production eslint-config-prettier 'src/**/*.js'",
+    "lint:prettier": "cross-env NODE_ENV=production prettier -c 'src/**/*.{js,jsx,ts,tsx,json}'",
+    "lint:eslint": "cross-env NODE_ENV=production eslint src --report-unused-disable-directives --color",
+    "lint:tsc": "cross-env NODE_ENV=production tsc --noEmit --pretty"
+  },
+  "files": ["lib/*", "Errors.{js,d.ts}", "Factories.{js,d.ts}", "LiveEntities.{js,d.ts}", "SwedbankPayClient.{js,d.ts}", "Types.{js,d.ts}"],
+  "nodemonConfig": {
+    "ext": "d.ts,json",
+    "watch": [
+      "src"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.34",
+    "@typescript-eslint/eslint-plugin": "^5.20.0",
+    "@typescript-eslint/parser": "^5.20.0",
+    "copyfiles": "^2.4.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.13.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "nodemon": "^2.0.16",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.6.2",
+    "typedoc": "^0.22.17",
+    "typescript": "^4.6.3"
+  },
+  "dependencies": {
+    "axios": "^0.27.2"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "lib": ["ES2020"],
+    "declaration": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "sourceMap": false,
+    "strict": true,
+    "target": "es2020",
+    "preserveWatchOutput": true,
+    "resolveJsonModule": true,
+  },
+  "compileOnSave": true,
+  "include": [
+    "src",
+    "types/*.d.ts", "src/LiveEntities/.ts",
+  ]
+}

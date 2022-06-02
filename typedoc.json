@@ -1,0 +1,6 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/SwedbankPayClient.ts", "./src/LiveEntities", "./src/Factories", "./src/Errors", "./src/Types"],
+  "excludePrivate": true,
+  "out": "docs"
+}

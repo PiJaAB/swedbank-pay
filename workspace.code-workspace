@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../tack-for-kaffet-firebaseFunctions"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../tack-for-kaffet-common"
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "swedbank-pay-firebase/node_modules/typescript/lib"
+	}
+}

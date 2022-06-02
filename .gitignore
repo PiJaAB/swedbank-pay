@@ -1,0 +1,9 @@
+## Compiled JavaScript files
+lib/
+docs/
+
+*.log
+*.bak
+
+
+node_modules/
