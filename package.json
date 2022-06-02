@@ -1,6 +1,6 @@
 {
   "name": "@pija-ab/swedbank-pay",
-  "version": "1.0.0-alpha1",
+  "version": "1.0.0-alpha2",
   "main": "SwedbankPayClient.js",
   "publishConfig": {
     "access": "public"
@@ -15,7 +15,14 @@
     "lint:eslint": "cross-env NODE_ENV=production eslint src --report-unused-disable-directives --color",
     "lint:tsc": "cross-env NODE_ENV=production tsc --noEmit --pretty"
   },
-  "files": ["lib/*", "Errors.{js,d.ts}", "Factories.{js,d.ts}", "LiveEntities.{js,d.ts}", "SwedbankPayClient.{js,d.ts}", "Types.{js,d.ts}"],
+  "files": [
+    "lib/*",
+    "Errors.{js,d.ts}",
+    "Factories.{js,d.ts}",
+    "LiveEntities.{js,d.ts}",
+    "SwedbankPayClient.{js,d.ts}",
+    "Types.{js,d.ts}"
+  ],
   "nodemonConfig": {
     "ext": "d.ts,json",
     "watch": [
