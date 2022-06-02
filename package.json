@@ -22,6 +22,10 @@
       "src"
     ]
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PiJaAB/swedbank-pay.git"
+  },
   "devDependencies": {
     "@types/node": "^17.0.34",
     "@typescript-eslint/eslint-plugin": "^5.20.0",
