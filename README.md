@@ -1,4 +1,5 @@
 # @pija-ab/swedbank-pay
+[<img src="https://nodei.co/npm/@pija-ab/swedbank-pay.png?mini=true" alt="View this project on NPM">](https://www.npmjs.com/package/@pija-ab/swedbank-pay)
 
 This is a node implementation of the [Swedbank Pay API](https://developer.swedbankpay.com/). The only documentation that's currently being followed is the Checkout-V3 Payments Only.
 
