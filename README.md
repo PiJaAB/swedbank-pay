@@ -1,0 +1,1 @@
+# @pija-ab/swedbank-pay
