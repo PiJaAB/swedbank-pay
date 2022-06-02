@@ -42,4 +42,4 @@ jobs:
       - name: Run deploy script
         run: |
           git config user.name "Linn Dahlgren" && git config user.email "linn.dahlgren@pija.se"
-          npm run gh-pages-deploy
+          node .github/scripts/gh-pages-deploy
