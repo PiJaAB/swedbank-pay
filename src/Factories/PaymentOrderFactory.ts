@@ -1,4 +1,4 @@
-import type {
+import {
   PaymentOrderOperation,
   responseData,
   requestData,
@@ -10,7 +10,7 @@ import OrderItemFactory, {
 } from './OrderItemFactory';
 import InvalidEntityError from '../Errors/InvalidEntityError';
 import type SwedbankPayClient from '../SwedbankPayClient';
-import { AxiosResponse } from 'axios';
+import { PaymentOrder } from '../LiveEntities'
 
 export type Serialized = PaymentOrderFactory['toJSON'] extends () => infer Q
   ? Q
@@ -546,11 +546,9 @@ export default class PaymentOrderFactory {
   /**
    * Serializes the purchase for Swedbank Pay
    * and makes a request for the purchase to be created.
-   * @returns A serialized object ready to be sent to Swedbank Pay to create a new purchase
+   * @returns A live entity of the paymentorder.
    */
-  makePurchaseRequest(): Promise<
-    AxiosResponse<responseData.PaymentOrderResponse, requestData.PaymentOrder>
-  > {
+  async makePurchaseRequest(): Promise<PaymentOrder> {
     const errors = this.getErrors();
     const orderItems = this.orderItems.map((o, i) => {
       errors.push(
@@ -605,6 +603,7 @@ export default class PaymentOrderFactory {
       orderItems,
     };
 
-    return this.client.axios.post('/psp/paymentorders', purchase);
+    const res = await this.client.axios.post<responseData.PaymentOrderResponse>('/psp/paymentorders', purchase);
+    return new PaymentOrder(this.client, res.data, new Date());
   }
 }
