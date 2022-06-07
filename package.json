@@ -1,6 +1,6 @@
 {
   "name": "@pija-ab/swedbank-pay",
-  "version": "1.0.0-alpha3",
+  "version": "1.0.0-alpha4",
   "main": "SwedbankPayClient.js",
   "publishConfig": {
     "access": "public"
