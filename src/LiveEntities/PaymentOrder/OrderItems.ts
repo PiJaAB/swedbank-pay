@@ -13,7 +13,7 @@ export default class OrderItems extends PaymentOrderEntity<
   }
 
   /**
-   * Get the financial transactions list, fetches from Swedbank Pay backend if necessary.
+   * Get the order item list, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getOrderItemList(

@@ -12,7 +12,8 @@ export default class Failed extends PaymentOrderEntity<
     super(client, ENTITY_KEY, id);
   }
   /**
-   * Get the history list, fetches from Swedbank Pay backend if necessary.
+   * Get an object describing the problem related to the failure.
+   * Fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getProblem(

@@ -13,7 +13,7 @@ export default class Aborted extends PaymentOrderEntity<
   }
 
   /**
-   * Get the history list, fetches from Swedbank Pay backend if necessary.
+   * Get the abort reason, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getAbortReason(forceFresh?: boolean): Promise<string | null> {

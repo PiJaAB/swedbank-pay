@@ -1,8 +1,4 @@
-import {
-  PaymentOrderOperation,
-  responseData,
-  requestData,
-} from '../Types';
+import { PaymentOrderOperation, responseData, requestData } from '../Types';
 import PayerFactory, { PayerFactoryOptions } from './PayerFactory';
 import OrderItemFactory, {
   QUANTITY_PRECISION,
@@ -10,7 +6,7 @@ import OrderItemFactory, {
 } from './OrderItemFactory';
 import InvalidEntityError from '../Errors/InvalidEntityError';
 import type SwedbankPayClient from '../SwedbankPayClient';
-import { PaymentOrder } from '../LiveEntities'
+import { PaymentOrder } from '../LiveEntities';
 
 export type Serialized = PaymentOrderFactory['toJSON'] extends () => infer Q
   ? Q
@@ -200,13 +196,23 @@ export default class PaymentOrderFactory {
     return this;
   }
 
-  /** The URL to the terms of service document which the payer must accept in order to complete the payment. **HTTPS is a requirement. */
+  /**
+   * For our Seamless Views, the field called [`paymentUrl`](https://developer.swedbankpay.com/checkout-v3/payments-only/features/technical-reference/payment-url) will be used when the payer is redirected out of the Seamless View (the `iframe`). The payer is redirected out of frame when selecting the payment instrument.
+   *
+   * The URL should represent the page of where the Payment Order Seamless View was hosted originally, such as the checkout page, shopping cart page, or similar. Basically, `paymentUrl` should be set to the same URL as that of the page where the JavaScript for the Seamless View was added to in order to initiate the payment process.
+   *
+   * Please note that the `paymentUrl` must be able to invoke the same JavaScript URL from the same Payment Order as the one that initiated the payment process originally, so it should include some sort of state identifier in the URL. The state identifier is the ID of the order, shopping cart or similar that has the URL of the Payment stored.
+   */
   get paymentUrl() {
     return this._paymentUrl;
   }
 
   /**
-   * The URL to the terms of service document which the payer must accept in order to complete the payment. **HTTPS is a requirement.
+   * For our Seamless Views, the field called [`paymentUrl`](https://developer.swedbankpay.com/checkout-v3/payments-only/features/technical-reference/payment-url) will be used when the payer is redirected out of the Seamless View (the `iframe`). The payer is redirected out of frame when selecting the payment instrument.
+   *
+   * The URL should represent the page of where the Payment Order Seamless View was hosted originally, such as the checkout page, shopping cart page, or similar. Basically, `paymentUrl` should be set to the same URL as that of the page where the JavaScript for the Seamless View was added to in order to initiate the payment process.
+   *
+   * Please note that the `paymentUrl` must be able to invoke the same JavaScript URL from the same Payment Order as the one that initiated the payment process originally, so it should include some sort of state identifier in the URL. The state identifier is the ID of the order, shopping cart or similar that has the URL of the Payment stored.
    * @param newPaymentUrl The new hostUrls array
    * @returns The purchase factory for chaining.
    */
@@ -323,9 +329,7 @@ export default class PaymentOrderFactory {
     return this;
   }
 
-  /**
-   * The operation of the purchase
-   */
+  /** The operation of the purchase */
   get operation() {
     return this._operation;
   }
@@ -340,9 +344,7 @@ export default class PaymentOrderFactory {
     return this;
   }
 
-  /**
-   * The language of the purchase
-   */
+  /** The language of the purchase */
   get language() {
     return this._language;
   }
@@ -603,7 +605,10 @@ export default class PaymentOrderFactory {
       orderItems,
     };
 
-    const res = await this.client.axios.post<responseData.PaymentOrderResponse>('/psp/paymentorders', purchase);
+    const res = await this.client.axios.post<responseData.PaymentOrderResponse>(
+      '/psp/paymentorders',
+      purchase,
+    );
     return new PaymentOrder(this.client, res.data, new Date());
   }
 }
