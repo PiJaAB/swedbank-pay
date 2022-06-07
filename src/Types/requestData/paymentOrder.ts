@@ -5,6 +5,10 @@ import Payer from './payer';
 export default interface PaymentOrder {
   /** The operation that the payment order is supposed to perform. */
   readonly operation: PaymentOrderOperation;
+  /** Required when `operation: Recur`, use this recurrence token for a recurring payment. */
+  readonly recurrenceToken?: string;
+  /** The `paymentToken` to use to prefill the forms during checkout to make it "one click". */
+  readonly paymentToken?: string;
   /** The currency of the payment. */
   readonly currency: string;
   /**

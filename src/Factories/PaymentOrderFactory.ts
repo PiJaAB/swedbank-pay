@@ -100,6 +100,8 @@ export default class PaymentOrderFactory {
     this.client = client;
   }
 
+  /*
+
   /**
    * The amount of the purchase
    */
@@ -128,6 +130,40 @@ export default class PaymentOrderFactory {
       termsOfServiceUrl: this.termsOfServiceUrl,
       hostUrls: this.hostUrls,
     };
+  }
+
+  /**
+   * Set to true if you want to generate an recurrenceToken for future recurring purchases.
+   */
+  get generateRecurrenceToken() {
+    return this._generateRecurrenceToken;
+  }
+
+  /**
+   * Set to true if you want to generate an recurrenceToken for future recurring purchases.
+   * @param newGenerateRecurrenceToken The new value for generateRecurrenceToken
+   * @returns The purchase factory for chaining.
+   */
+  setGenerateRecurrenceToken(newGenerateRecurrenceToken: boolean | undefined) {
+    this._generateRecurrenceToken = newGenerateRecurrenceToken;
+    return this;
+  }
+
+  /**
+   * Set to true if you want to generate an recurrenceToken for future recurring purchases.
+   */
+  get generatePaymentToken() {
+    return this._generatePaymentToken;
+  }
+
+  /**
+   * Set to true if you want to generate an PaymentToken for future recurring purchases.
+   * @param newGeneratePaymentToken The new value for generatePaymentToken
+   * @returns The purchase factory for chaining.
+   */
+  setGeneratePaymentToken(newGeneratePaymentToken: boolean | undefined) {
+    this._generatePaymentToken = newGeneratePaymentToken;
+    return this;
   }
 
   /**
