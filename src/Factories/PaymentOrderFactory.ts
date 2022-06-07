@@ -488,7 +488,7 @@ export default class PaymentOrderFactory {
       errors.push(['operation', 'Operation is required']);
     }
     if (!language) {
-      errors.push(['lastName', 'Language is required']);
+      errors.push(['language', 'Language is required']);
     }
     if (!userAgent) {
       errors.push(['userAgent', 'User-Agent is required']);
