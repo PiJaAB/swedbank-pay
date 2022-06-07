@@ -23,13 +23,19 @@ export default class Urls extends PaymentOrderEntity<
   }
 
   /**
+   * Get the cancelUrl, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getCancelUrl(forceFresh?: boolean): Promise<string | null> {
+    return this.getAll(forceFresh).then(({ cancelUrl }) => cancelUrl ?? null);
+  }
+
+  /**
    * Get the paymentUrl, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getPaymentUrl(forceFresh?: boolean): Promise<string | null> {
-    return this.getAll(forceFresh).then(
-      ({ completeUrl }) => completeUrl ?? null,
-    );
+    return this.getAll(forceFresh).then(({ paymentUrl }) => paymentUrl ?? null);
   }
 
   /**
