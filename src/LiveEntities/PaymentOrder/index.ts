@@ -115,7 +115,7 @@ export default class PaymentOrder {
   }
 
   static async load(client: SwedbankPayClient, id: string) {
-    if (!id.startsWith(ID_PREFIX)) {
+    if (!id.startsWith('/')) {
       id = `${ID_PREFIX}${id}`;
     }
     const res = await client.axios.get<responseData.PaymentOrderResponse>(id);
