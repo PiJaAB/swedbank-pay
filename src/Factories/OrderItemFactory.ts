@@ -6,7 +6,6 @@ export type OrderItemFactoryOptions = {
   readonly type?: OrderItemType;
   readonly quantity?: number;
   readonly quantityUnit?: string;
-  readonly amount?: number;
   readonly vatPercent?: number;
   readonly class?: string;
   readonly unitPrice?: number;
@@ -233,7 +232,7 @@ export default class OrderItemFactory {
     return errors;
   }
 
-  toJSON(): OrderItemFactoryOptions {
+  toJSON(): OrderItemFactoryOptions & { amount: number }{
     return {
       name: this.name,
       type: this.type,

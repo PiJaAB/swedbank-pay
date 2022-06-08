@@ -300,7 +300,7 @@ export default class PaymentOrderFactory {
     const orderItemString = this.orderItems
       .map(
         (item) =>
-          `${item.displayQuantity}${item.displayQuantityUnit}x${item.name}`,
+          `${item.displayQuantity}${item.displayQuantityUnit ?? ''}x${item.name}`,
       )
       .join(', ');
     if (orderItemString) return orderItemString;
