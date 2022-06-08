@@ -464,14 +464,21 @@ export default class PayerFactory {
 
   /**
    * The national identifier object.
-   * @param newNationalIdentifier The new social security number
+   * @param newNationalIdentifier The new national identifier object
+   * @param merge Whether to merge with existing national identifier. Replaces entirely if false
    * @returns The payer factory for chaining.
    */
-  setNationalIdentifier(newNationalIdentifier?: {
-    readonly socialSecurityNumber?: string;
-    readonly countryCode?: string;
-  }) {
+  setNationalIdentifier(
+    newNationalIdentifier?:
+      | {
+          readonly socialSecurityNumber?: string;
+          readonly countryCode?: string;
+        }
+      | undefined,
+    merge?: boolean,
+  ) {
     this._nationalIdentifier = {
+      ...(merge ? this._nationalIdentifier : {}),
       ...newNationalIdentifier,
     };
     return this;
@@ -483,9 +490,9 @@ export default class PayerFactory {
   }
 
   /**
-   * The shipping address object related to the `payer`. The field is related to [3-D Secure 2]().
-   * @param newAccountInfo The new shipping address
-   * @param merge Whether to merge with existing address. Replaces entirely if false
+   * Object related to the payer containing info about the payer’s account.
+   * @param newAccountInfo The new account information
+   * @param merge Whether to merge with existing account info. Replaces entirely if false
    * @returns The payer factory for chaining.
    */
   setAccountInfo(newAccountInfo?: AccountInfoSetter, merge?: boolean) {
@@ -545,7 +552,26 @@ export default class PayerFactory {
     // Empty payer object is allowed
     if (typeof this.toJSON() === 'undefined') return [];
     const errors: [key: string, msg: string][] = [];
-    const { firstName, lastName, billingAddress, shippingAddress } = this;
+    const {
+      firstName,
+      lastName,
+      billingAddress,
+      shippingAddress,
+      nationalIdentifier,
+    } = this;
+    if (nationalIdentifier != null) {
+      if (nationalIdentifier.countryCode == null) {
+        errors.push([
+          'nationalIdentifier.countryCode',
+          'Require countryCode if socialSecurityNumber is set',
+        ]);
+      } else {
+        errors.push([
+          'nationalIdentifier.socialSecurityNumber',
+          'Require socialSecurityNumber if countryCode is set',
+        ]);
+      }
+    }
     if (!firstName) {
       errors.push(['firstName', 'First name is required']);
     }

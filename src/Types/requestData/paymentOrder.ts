@@ -5,6 +5,10 @@ import Payer from './payer';
 export default interface PaymentOrder {
   /** The operation that the payment order is supposed to perform. */
   readonly operation: PaymentOrderOperation;
+  /** Required when `operation: Recur`, use this recurrence token for a recurring payment. */
+  readonly recurrenceToken?: string;
+  /** The `paymentToken` to use to prefill the forms during checkout to make it "one click". */
+  readonly paymentToken?: string;
   /** The currency of the payment. */
   readonly currency: string;
   /**
@@ -41,11 +45,17 @@ export default interface PaymentOrder {
     readonly completeUrl: string;
     /** The URL to redirect the payer to if the payment is cancelled, either by the payer or by the merchant trough an `abort` request of the `payment` or `paymentorder`. */
     readonly cancelUrl?: string;
-    /** The URL to the API endpoint receiving `POST` requests on transaction activity related to the payment order. */
+    /** The URL to the API endpoint receiving `POST` requests on transaction activity related to the payment order. [Read more about `callbackUrl`](https://developer.swedbankpay.com/checkout-v3/payments-only/features/core/callback)*/
     readonly callbackUrl?: string;
     /** The URL to the terms of service document which the payer must accept in order to complete the payment. **HTTPS is a requirement. */
     readonly termsOfServiceUrl?: string;
-    /** The URL that Swedbank Pay will redirect back to when the payment menu needs to be loaded, to inspect and act on the current status of the payment. See [`paymentUrl`](https://developer.swedbankpay.com/checkout-v3/enterprise/features/technical-reference/payment-url) for details. */
+    /**
+     * For our Seamless Views, the field called [`paymentUrl`](https://developer.swedbankpay.com/checkout-v3/payments-only/features/technical-reference/payment-url) will be used when the payer is redirected out of the Seamless View (the `iframe`). The payer is redirected out of frame when selecting the payment instrument.
+     *
+     * The URL should represent the page of where the Payment Order Seamless View was hosted originally, such as the checkout page, shopping cart page, or similar. Basically, `paymentUrl` should be set to the same URL as that of the page where the JavaScript for the Seamless View was added to in order to initiate the payment process.
+     *
+     * Please note that the `paymentUrl` must be able to invoke the same JavaScript URL from the same Payment Order as the one that initiated the payment process originally, so it should include some sort of state identifier in the URL. The state identifier is the ID of the order, shopping cart or similar that has the URL of the Payment stored.
+     */
     readonly paymentUrl?: string;
     /** The array of URLs valid for embedding of Swedbank Pay Hosted Views. */
     readonly hostUrls: ReadonlyArray<string>;

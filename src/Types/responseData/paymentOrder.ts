@@ -13,6 +13,8 @@ export interface PaymentOrderResponseData {
   readonly description: string;
   readonly initiatingSystemUserAgent: string;
   readonly language: string;
+  readonly recurrenceToken?: string;
+  readonly paymentToken?: string;
   readonly availableInstruments: string[];
   readonly implementation: string;
   readonly integration: string;

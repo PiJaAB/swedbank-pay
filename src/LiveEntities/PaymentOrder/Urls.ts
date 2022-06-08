@@ -13,7 +13,7 @@ export default class Urls extends PaymentOrderEntity<
   }
 
   /**
-   * Get the payment instrument, fetches from Swedbank Pay backend if necessary.
+   * Get the completeUrl, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getCompleteUrl(forceFresh?: boolean): Promise<string | null> {
@@ -23,7 +23,23 @@ export default class Urls extends PaymentOrderEntity<
   }
 
   /**
-   * Get the payeeReference, fetches from Swedbank Pay backend if necessary.
+   * Get the cancelUrl, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getCancelUrl(forceFresh?: boolean): Promise<string | null> {
+    return this.getAll(forceFresh).then(({ cancelUrl }) => cancelUrl ?? null);
+  }
+
+  /**
+   * Get the paymentUrl, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getPaymentUrl(forceFresh?: boolean): Promise<string | null> {
+    return this.getAll(forceFresh).then(({ paymentUrl }) => paymentUrl ?? null);
+  }
+
+  /**
+   * Get the callbackUrl, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getCallbackUrl(forceFresh?: boolean): Promise<string | null> {
@@ -33,7 +49,7 @@ export default class Urls extends PaymentOrderEntity<
   }
 
   /**
-   * Get the orderReference, fetches from Swedbank Pay backend if necessary.
+   * Get the termsOfServiceUrl, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getTermsOfServiceUrl(forceFresh?: boolean): Promise<string | null> {
@@ -43,7 +59,7 @@ export default class Urls extends PaymentOrderEntity<
   }
 
   /**
-   * Get the paymentTokens, fetches from Swedbank Pay backend if necessary.
+   * Get the hosts url list, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getHostUrls(forceFresh?: boolean): Promise<ReadonlyArray<string>> {

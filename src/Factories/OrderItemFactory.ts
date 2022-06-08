@@ -63,12 +63,12 @@ export default class OrderItemFactory {
     this._reference = reference;
   }
 
-  /** The price per unit of order item, including VAT. */
+  /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
   get unitPrice(): bigint | undefined {
     return this._unitPrice;
   }
 
-  /** The price per unit of order item, including VAT. */
+  /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
   setUnitPrice(
     newUnitPrice: number | bigint,
     vatPercent?: number | bigint,
