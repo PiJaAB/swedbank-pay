@@ -37,7 +37,7 @@ export default class PaymentOrder {
   readonly instrumentMode: boolean;
   readonly guestMode: boolean;
   readonly remainingReversalAmount: number | null;
-  readonly remainingCaptureAmaunt: number | null;
+  readonly remainingCaptureAmount: number | null;
   readonly remainingCancellationAmount: number | null;
 
   readonly operations: {
@@ -102,7 +102,7 @@ export default class PaymentOrder {
     this.payer = new Payer(client, paymentOrder.payer.id);
     this.urls = new Urls(client, paymentOrder.urls.id);
     this.remainingReversalAmount = paymentOrder.remainingReversalAmount ?? null;
-    this.remainingCaptureAmaunt = paymentOrder.remainingCaptureAmaunt ?? null;
+    this.remainingCaptureAmount = paymentOrder.remainingCaptureAmount ?? null;
     this.remainingCancellationAmount =
       paymentOrder.remainingCancellationAmount ?? null;
     this.operations = operations.reduce((acc, cur) => {
@@ -127,7 +127,7 @@ export default class PaymentOrder {
    * Whether this paymentOrder is paid and captured in full.
    */
   get fullyCaptured() {
-    return this.status === 'Paid' && !this.remainingCaptureAmaunt;
+    return this.status === 'Paid' && !this.remainingCaptureAmount;
   }
 
   async capture(
@@ -264,7 +264,7 @@ export default class PaymentOrder {
       initiatingSystemUserAgent: paymentOrder.initiatingSystemUserAgent,
       language: paymentOrder.language,
       remainingReversalAmount: paymentOrder.remainingReversalAmount ?? null,
-      remainingCaptureAmaunt: paymentOrder.remainingCaptureAmaunt ?? null,
+      remainingCaptureAmount: paymentOrder.remainingCaptureAmount ?? null,
       remainingCancellationAmount:
         paymentOrder.remainingCancellationAmount ?? null,
       availableInstruments: [...paymentOrder.availableInstruments],
