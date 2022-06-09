@@ -637,8 +637,8 @@ export default class PaymentOrderFactory {
         description,
         amount: Number(this.amount),
         vatAmount: Number(this.vatAmount),
+        orderItems,
       },
-      orderItems,
     };
 
     const res = await this.client.axios.post<responseData.PaymentOrderResponse>(
