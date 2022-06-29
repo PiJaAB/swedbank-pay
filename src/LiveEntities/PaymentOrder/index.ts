@@ -119,7 +119,6 @@ export default class PaymentOrder {
       id = `${ID_PREFIX}${id}`;
     }
     const res = await client.axios.get<responseData.PaymentOrderResponse>(id);
-    console.log(res.data);
     return new this(client, res.data, new Date());
   }
 
