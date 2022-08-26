@@ -451,10 +451,12 @@ export default class PayerFactory {
   }
 
   /** The national identifier object. */
-  get nationalIdentifier(): {
-    readonly socialSecurityNumber?: string;
-    readonly countryCode?: string;
-  } | undefined {
+  get nationalIdentifier():
+    | {
+        readonly socialSecurityNumber?: string;
+        readonly countryCode?: string;
+      }
+    | undefined {
     return Object.values(this._nationalIdentifier).some(
       (val) => typeof val !== 'undefined',
     )

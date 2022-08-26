@@ -3,7 +3,7 @@ import LazyEntity from '../LazyEntity';
 export abstract class PaymentOrderEntity<
   Key extends string | number | symbol,
   ResData extends {
-    [key in Key]: {
+    [key in Key]?: {
       id: string;
     };
   } & {

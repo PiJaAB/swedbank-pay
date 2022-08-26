@@ -3,7 +3,13 @@ export interface PaymentOrderResponseData {
   readonly created: string;
   readonly updated: string;
   readonly operation: string;
-  readonly status: 'Initialized' | 'Ready' | 'Pending' | 'Failed' | 'Aborted' | 'Paid';
+  readonly status:
+    | 'Initialized'
+    | 'Ready'
+    | 'Pending'
+    | 'Failed'
+    | 'Aborted'
+    | 'Paid';
   readonly currency: string;
   readonly amount: number;
   readonly vatAmount: number;

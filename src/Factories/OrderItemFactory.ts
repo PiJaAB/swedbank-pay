@@ -232,7 +232,7 @@ export default class OrderItemFactory {
     return errors;
   }
 
-  toJSON(): OrderItemFactoryOptions & { amount: number }{
+  toJSON(): OrderItemFactoryOptions & { amount: number } {
     return {
       name: this.name,
       type: this.type,
