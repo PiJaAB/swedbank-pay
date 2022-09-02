@@ -16,6 +16,7 @@ export type PaymentOrderFactoryOptions = {
   readonly paymentorder?: {
     readonly generatePaymentToken?: boolean;
     readonly generateRecurrenceToken?: boolean;
+    readonly recurrenceToken?: string;
     readonly operation?: PaymentOrderOperation;
     readonly language?: string;
     readonly userAgent?: string;
@@ -48,6 +49,7 @@ export default class PaymentOrderFactory {
   private _orderReference: string | undefined;
   private _generatePaymentToken: boolean | undefined;
   private _generateRecurrenceToken: boolean | undefined;
+  private _recurrenceToken: string | undefined;
   private _hostUrls: string[];
   private _callbackUrl:
     | requestData.PaymentOrder['urls']['callbackUrl']
@@ -82,6 +84,7 @@ export default class PaymentOrderFactory {
     this.payer = new PayerFactory(client, paymentorder?.payer);
     this._generatePaymentToken = paymentorder?.generatePaymentToken;
     this._generateRecurrenceToken = paymentorder?.generateRecurrenceToken;
+    this._recurrenceToken = paymentorder?.recurrenceToken;
     this._callbackUrl = paymentorder?.urls?.callbackUrl;
     this._cancelUrl = paymentorder?.urls?.cancelUrl;
     this._completeUrl = paymentorder?.urls?.completeUrl;
@@ -130,6 +133,23 @@ export default class PaymentOrderFactory {
       termsOfServiceUrl: this.termsOfServiceUrl,
       hostUrls: this.hostUrls,
     };
+  }
+
+  /**
+   * The created recurrenceToken, if `operation: Verify`, `operation: Recur` or `generateRecurrenceToken: true` was used.
+   */
+  get recurrenceToken() {
+    return this._recurrenceToken;
+  }
+
+  /**
+   * The created recurrenceToken, if `operation: Verify`, `operation: Recur` or `generateRecurrenceToken: true` was used.
+   * @param newRecurrenceToken The new value for recurrenceToken
+   * @returns The purchase factory for chaining.
+   */
+  setRecurrenceToken(newRecurrenceToken: string | undefined) {
+    this._recurrenceToken = newRecurrenceToken;
+    return this;
   }
 
   /**
@@ -516,6 +536,7 @@ export default class PaymentOrderFactory {
       reference,
       currency,
       description,
+      recurrenceToken,
       urls: { completeUrl, hostUrls },
     } = this;
     if (!description && !this.defaultDescription) {
@@ -526,6 +547,12 @@ export default class PaymentOrderFactory {
     }
     if (!operation) {
       errors.push(['operation', 'Operation is required']);
+    }
+    if (operation === 'Recur' && !recurrenceToken) {
+      errors.push([
+        'recurrenceToken',
+        'Recurrence token is required for Recur operation',
+      ]);
     }
     if (!language) {
       errors.push(['language', 'Language is required']);
@@ -553,6 +580,7 @@ export default class PaymentOrderFactory {
     const ret = {
       generatePaymentToken: this._generatePaymentToken,
       generateRecurrenceToken: this._generateRecurrenceToken,
+      recurrenceToken: this._recurrenceToken,
       operation: this.operation,
       language: this.language,
       userAgent: this.userAgent,
