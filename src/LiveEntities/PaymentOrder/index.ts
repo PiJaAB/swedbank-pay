@@ -1,5 +1,5 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderOperation, responseData } from '../../Types';
 import Aborted from './Aborted';
 import Cancelled from './Cancelled';
 import Failed from './Failed';
@@ -15,8 +15,95 @@ import Urls from './Urls';
 
 const ID_PREFIX = '/psp/paymentorders/';
 
+function paramData(
+  data: responseData.PaymentOrderResponse,
+  client: SwedbankPayClient,
+  existing?: PaymentOrder,
+) {
+  const { paymentOrder, operations } = data;
+  return {
+    id: paymentOrder.id,
+    operation: paymentOrder.operation,
+    status: paymentOrder.status,
+    created: new Date(paymentOrder.created),
+    updated: new Date(paymentOrder.updated),
+    amount: paymentOrder.amount,
+    vatAmount: paymentOrder.vatAmount,
+    description: paymentOrder.description,
+    initiatingSystemUserAgent: paymentOrder.initiatingSystemUserAgent,
+    language: paymentOrder.language,
+    availableInstruments: [...paymentOrder.availableInstruments],
+    implementation: paymentOrder.implementation,
+    integration: paymentOrder.integration,
+    instrumentMode: paymentOrder.instrumentMode,
+    guestMode: paymentOrder.guestMode,
+    aborted:
+      !existing || paymentOrder.aborted.id !== existing.aborted.id
+        ? new Aborted(client, paymentOrder.aborted.id)
+        : existing.aborted,
+    cancelled:
+      !existing || paymentOrder.cancelled.id !== existing.cancelled.id
+        ? new Cancelled(client, paymentOrder.cancelled.id)
+        : existing.cancelled,
+    failed:
+      !existing || paymentOrder.failed.id !== existing.failed.id
+        ? new Failed(client, paymentOrder.failed.id)
+        : existing.failed,
+    failedAttempts:
+      !existing || paymentOrder.failedAttempts.id !== existing.failedAttempts.id
+        ? new FailedAttempts(client, paymentOrder.failedAttempts.id)
+        : existing.failedAttempts,
+    financialTransactions:
+      !existing ||
+      paymentOrder.financialTransactions.id !==
+        existing.financialTransactions.id
+        ? new FinancialTransactions(
+            client,
+            paymentOrder.financialTransactions.id,
+          )
+        : existing.financialTransactions,
+    history:
+      !existing || paymentOrder.history.id !== existing.history.id
+        ? new History(client, paymentOrder.history.id)
+        : existing.history,
+    metadata:
+      !existing || paymentOrder.metadata.id !== existing.metadata.id
+        ? new Metadata(client, paymentOrder.metadata.id)
+        : existing.metadata,
+    orderItems:
+      !existing || paymentOrder.orderItems.id !== existing.orderItems.id
+        ? new OrderItems(client, paymentOrder.orderItems.id)
+        : existing.orderItems,
+    paid:
+      !existing || paymentOrder.paid.id !== existing.paid.id
+        ? new Paid(client, paymentOrder.paid.id)
+        : existing.paid,
+    payeeInfo:
+      !existing || paymentOrder.payeeInfo.id !== existing.payeeInfo.id
+        ? new PayeeInfo(client, paymentOrder.payeeInfo.id)
+        : existing.payeeInfo,
+    payer:
+      !existing || paymentOrder.payer.id !== existing.payer.id
+        ? new Payer(client, paymentOrder.payer.id)
+        : existing.payer,
+    urls:
+      !existing || paymentOrder.urls.id !== existing.urls.id
+        ? new Urls(client, paymentOrder.urls.id)
+        : existing.urls,
+    remainingReversalAmount: paymentOrder.remainingReversalAmount ?? null,
+    remainingCaptureAmount: paymentOrder.remainingCaptureAmount ?? null,
+    remainingCancellationAmount:
+      paymentOrder.remainingCancellationAmount ?? null,
+    operations: operations.reduce((acc, cur) => {
+      acc[cur.rel] = cur;
+      return acc;
+    }, {} as { [key in responseData.PaymentOrderOperationEntity['rel']]: responseData.PaymentOrderOperationEntity }),
+  };
+}
+
 export default class PaymentOrder {
   readonly id: string;
+  readonly operation: PaymentOrderOperation;
   readonly status:
     | 'Initialized'
     | 'Ready'
@@ -68,47 +155,39 @@ export default class PaymentOrder {
     options: responseData.PaymentOrderResponse,
     fetched: Date,
   ) {
-    const { paymentOrder, operations } = options;
-    this.id = paymentOrder.id;
-    this.status = paymentOrder.status;
-    this.created = new Date(paymentOrder.created);
-    this.updated = new Date(paymentOrder.updated);
-    this.amount = paymentOrder.amount;
-    this.vatAmount = paymentOrder.vatAmount;
-    this.description = paymentOrder.description;
-    this.initiatingSystemUserAgent = paymentOrder.initiatingSystemUserAgent;
-    this.language = paymentOrder.language;
-    this.availableInstruments = [...paymentOrder.availableInstruments];
-    this.implementation = paymentOrder.implementation;
-    this.integration = paymentOrder.integration;
-    this.instrumentMode = paymentOrder.instrumentMode;
-    this.guestMode = paymentOrder.guestMode;
-    this.aborted = new Aborted(client, paymentOrder.aborted.id);
-    this.cancelled = new Cancelled(client, paymentOrder.cancelled.id);
-    this.failed = new Failed(client, paymentOrder.failed.id);
-    this.failedAttempts = new FailedAttempts(
-      client,
-      paymentOrder.failedAttempts.id,
-    );
-    this.financialTransactions = new FinancialTransactions(
-      client,
-      paymentOrder.financialTransactions.id,
-    );
-    this.history = new History(client, paymentOrder.history.id);
-    this.metadata = new Metadata(client, paymentOrder.metadata.id);
-    this.orderItems = new OrderItems(client, paymentOrder.orderItems.id);
-    this.paid = new Paid(client, paymentOrder.paid.id);
-    this.payeeInfo = new PayeeInfo(client, paymentOrder.payeeInfo.id);
-    this.payer = new Payer(client, paymentOrder.payer.id);
-    this.urls = new Urls(client, paymentOrder.urls.id);
-    this.remainingReversalAmount = paymentOrder.remainingReversalAmount ?? null;
-    this.remainingCaptureAmount = paymentOrder.remainingCaptureAmount ?? null;
-    this.remainingCancellationAmount =
-      paymentOrder.remainingCancellationAmount ?? null;
-    this.operations = operations.reduce((acc, cur) => {
-      acc[cur.rel] = cur;
-      return acc;
-    }, {} as { [key in responseData.PaymentOrderOperationEntity['rel']]: responseData.PaymentOrderOperationEntity });
+    const data = paramData(options, client);
+    this.id = data.id;
+    this.operation = data.operation;
+    this.status = data.status;
+    this.created = data.created;
+    this.updated = data.updated;
+    this.amount = data.amount;
+    this.vatAmount = data.vatAmount;
+    this.description = data.description;
+    this.initiatingSystemUserAgent = data.initiatingSystemUserAgent;
+    this.language = data.language;
+    this.availableInstruments = data.availableInstruments;
+    this.implementation = data.implementation;
+    this.integration = data.integration;
+    this.instrumentMode = data.instrumentMode;
+    this.guestMode = data.guestMode;
+    this.aborted = data.aborted;
+    this.cancelled = data.cancelled;
+    this.failed = data.failed;
+    this.failedAttempts = data.failedAttempts;
+    this.financialTransactions = data.financialTransactions;
+    this.history = data.history;
+    this.metadata = data.metadata;
+    this.orderItems = data.orderItems;
+    this.paid = data.paid;
+    this.payeeInfo = data.payeeInfo;
+    this.payer = data.payer;
+    this.urls = data.urls;
+    this.remainingReversalAmount = data.remainingReversalAmount;
+    this.remainingCaptureAmount = data.remainingCaptureAmount;
+    this.remainingCancellationAmount = data.remainingCancellationAmount;
+    this.operations = data.operations;
+
     this.lastFetched = fetched;
 
     this.client = client;
@@ -252,82 +331,7 @@ export default class PaymentOrder {
   }
 
   private assignResponseData(resData: responseData.PaymentOrderResponse) {
-    const { paymentOrder, operations } = resData;
-    Object.assign(this, {
-      id: paymentOrder.id,
-      created: new Date(paymentOrder.created),
-      updated: new Date(paymentOrder.updated),
-      amount: paymentOrder.amount,
-      vatAmount: paymentOrder.vatAmount,
-      description: paymentOrder.description,
-      initiatingSystemUserAgent: paymentOrder.initiatingSystemUserAgent,
-      language: paymentOrder.language,
-      remainingReversalAmount: paymentOrder.remainingReversalAmount ?? null,
-      remainingCaptureAmount: paymentOrder.remainingCaptureAmount ?? null,
-      remainingCancellationAmount:
-        paymentOrder.remainingCancellationAmount ?? null,
-      availableInstruments: [...paymentOrder.availableInstruments],
-      implementation: paymentOrder.implementation,
-      integration: paymentOrder.integration,
-      instrumentMode: paymentOrder.instrumentMode,
-      guestMode: paymentOrder.guestMode,
-      aborted:
-        paymentOrder.aborted.id !== this.aborted.id
-          ? new Aborted(this.client, paymentOrder.aborted.id)
-          : this.aborted,
-      cancelled:
-        paymentOrder.cancelled.id !== this.cancelled.id
-          ? new Cancelled(this.client, paymentOrder.cancelled.id)
-          : this.cancelled,
-      failed:
-        paymentOrder.failed.id !== this.failed.id
-          ? new Failed(this.client, paymentOrder.failed.id)
-          : this.failed,
-      failedAttempts:
-        paymentOrder.failedAttempts.id !== this.failedAttempts.id
-          ? new FailedAttempts(this.client, paymentOrder.failedAttempts.id)
-          : this.failedAttempts,
-      financialTransactions:
-        paymentOrder.financialTransactions.id !== this.financialTransactions.id
-          ? new FinancialTransactions(
-              this.client,
-              paymentOrder.financialTransactions.id,
-            )
-          : this.financialTransactions,
-      history:
-        paymentOrder.history.id !== this.history.id
-          ? new History(this.client, paymentOrder.history.id)
-          : this.history,
-      metadata:
-        paymentOrder.metadata.id !== this.metadata.id
-          ? new Metadata(this.client, paymentOrder.metadata.id)
-          : this.metadata,
-      orderItems:
-        paymentOrder.orderItems.id !== this.orderItems.id
-          ? new OrderItems(this.client, paymentOrder.orderItems.id)
-          : this.orderItems,
-      paid:
-        paymentOrder.paid.id !== this.paid.id
-          ? new Paid(this.client, paymentOrder.paid.id)
-          : this.paid,
-      payeeInfo:
-        paymentOrder.payeeInfo.id !== this.payeeInfo.id
-          ? new PayeeInfo(this.client, paymentOrder.payeeInfo.id)
-          : this.payeeInfo,
-      payer:
-        paymentOrder.payer.id !== this.payer.id
-          ? new Payer(this.client, paymentOrder.payer.id)
-          : this.payer,
-      urls:
-        paymentOrder.urls.id !== this.urls.id
-          ? new Urls(this.client, paymentOrder.urls.id)
-          : this.urls,
-      lastFetched: new Date(),
-      operations: operations.reduce((acc, cur) => {
-        acc[cur.rel] = cur;
-        return acc;
-      }, {} as { [key in responseData.PaymentOrderOperationEntity['rel']]: responseData.PaymentOrderOperationEntity }),
-    });
+    Object.assign(this, paramData(resData, this.client, this));
   }
 
   /**
@@ -343,6 +347,7 @@ export default class PaymentOrder {
           if (this._inFlight === promise) {
             this._inFlight = null;
             this.assignResponseData(res.data);
+            Object.assign(this, { lastFetched: new Date() });
             return this;
           } else if (this._inFlight != null) {
             return this._inFlight;

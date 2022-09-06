@@ -1,8 +1,10 @@
+import type { PaymentOrderOperation } from '..';
+
 export interface PaymentOrderResponseData {
   readonly id: string;
   readonly created: string;
   readonly updated: string;
-  readonly operation: string;
+  readonly operation: PaymentOrderOperation;
   readonly status:
     | 'Initialized'
     | 'Ready'
