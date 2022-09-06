@@ -187,7 +187,6 @@ export default class PaymentOrder {
     this.remainingCaptureAmount = data.remainingCaptureAmount;
     this.remainingCancellationAmount = data.remainingCancellationAmount;
     this.operations = data.operations;
-
     this.lastFetched = fetched;
 
     this.client = client;
