@@ -1,17 +1,25 @@
 import { MaybePopulated } from '..';
 
+export type OrderItemType =
+  | 'PRODUCT'
+  | 'SERVICE'
+  | 'SHIPPING_FEE'
+  | 'DISCOUNT'
+  | 'VALUE_CODE'
+  | 'OTHER';
+
 export interface OrderItemListEntry {
   reference: string;
   name: string;
-  type: 'PRODUCT';
+  type: OrderItemType;
   class: string;
   quantity: number;
-  quantityUnit: 'pcs';
-  unitPrice: 1000;
-  discountPrice: 0;
-  vatPercent: 2500;
-  amount: 1000;
-  vatAmount: 200;
+  quantityUnit: string;
+  unitPrice: number;
+  discountPrice: number;
+  vatPercent: number;
+  amount: number;
+  vatAmount: number;
 }
 
 export interface OrderItemsResponse {
