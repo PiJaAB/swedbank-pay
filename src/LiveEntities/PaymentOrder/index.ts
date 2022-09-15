@@ -277,10 +277,16 @@ export default class PaymentOrder {
         orderItems,
       };
     } else {
+      const amount = this.remainingCaptureAmount ?? this.amount;
+      const alreadyCapturedAmount = this.amount - amount;
+      const vatAmount =
+        alreadyCapturedAmount === 0
+          ? this.vatAmount
+          : Math.round(amount * (this.vatAmount / this.amount));
       transaction = {
         description,
-        amount: this.amount,
-        vatAmount: this.vatAmount,
+        amount,
+        vatAmount,
         payeeReference,
         receiptReference,
       };
