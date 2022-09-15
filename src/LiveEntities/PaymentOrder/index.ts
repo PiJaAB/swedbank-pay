@@ -83,8 +83,9 @@ function paramData(
         ? new PayeeInfo(client, paymentOrder.payeeInfo.id)
         : existing.payeeInfo,
     payer:
-      !existing || paymentOrder.payer.id !== existing.payer.id
-        ? new Payer(client, paymentOrder.payer.id)
+      !existing || paymentOrder.payer?.id !== existing.payer?.id
+        ? (paymentOrder.payer && new Payer(client, paymentOrder.payer.id)) ??
+          null
         : existing.payer,
     urls:
       !existing || paymentOrder.urls.id !== existing.urls.id
@@ -143,7 +144,7 @@ export default class PaymentOrder {
   readonly orderItems: OrderItems;
   readonly paid: Paid;
   readonly payeeInfo: PayeeInfo;
-  readonly payer: Payer;
+  readonly payer: Payer | null;
   readonly urls: Urls;
 
   readonly lastFetched: Date;

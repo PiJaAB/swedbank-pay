@@ -37,7 +37,7 @@ export interface PaymentOrderResponseData {
   readonly payeeInfo: {
     readonly id: string;
   };
-  readonly payer: {
+  readonly payer?: {
     readonly id: string;
   };
   readonly history: {
