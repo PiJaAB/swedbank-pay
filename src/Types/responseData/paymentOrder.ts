@@ -28,7 +28,7 @@ export interface PaymentOrderResponseData {
   readonly integration: string;
   readonly instrumentMode: boolean;
   readonly guestMode: boolean;
-  readonly orderItems: {
+  readonly orderItems?: {
     readonly id: string;
   };
   readonly urls: {

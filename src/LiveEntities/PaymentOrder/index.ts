@@ -1,5 +1,6 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
 import { PaymentOrderOperation, responseData } from '../../Types';
+import { OrderItemListEntry } from '../../Types/responseData';
 import Aborted from './Aborted';
 import Cancelled from './Cancelled';
 import Failed from './Failed';
@@ -71,8 +72,10 @@ function paramData(
         ? new Metadata(client, paymentOrder.metadata.id)
         : existing.metadata,
     orderItems:
-      !existing || paymentOrder.orderItems.id !== existing.orderItems.id
-        ? new OrderItems(client, paymentOrder.orderItems.id)
+      !existing || paymentOrder.orderItems?.id !== existing.orderItems?.id
+        ? (paymentOrder.orderItems &&
+            new OrderItems(client, paymentOrder.orderItems.id)) ??
+          null
         : existing.orderItems,
     paid:
       !existing || paymentOrder.paid.id !== existing.paid.id
@@ -141,7 +144,7 @@ export default class PaymentOrder {
   readonly financialTransactions: FinancialTransactions;
   readonly history: History;
   readonly metadata: Metadata;
-  readonly orderItems: OrderItems;
+  readonly orderItems: OrderItems | null;
   readonly paid: Paid;
   readonly payeeInfo: PayeeInfo;
   readonly payer: Payer | null;
@@ -235,34 +238,53 @@ export default class PaymentOrder {
     if (captureOperation == null) {
       throw new Error('No capture operation available');
     }
-    const allItems = await this.orderItems.getOrderItemList();
-    const orderItems =
-      mapper != null
-        ? await Promise.all(allItems.map(mapper)).then((list) =>
+    let orderItems = await this.orderItems?.getOrderItemList();
+    if (orderItems != null && orderItems.length === 0) orderItems = undefined;
+    orderItems =
+      orderItems && mapper != null
+        ? await Promise.all(orderItems.map(mapper)).then((list) =>
             list.filter((e): e is responseData.OrderItemListEntry => e != null),
           )
-        : allItems;
-    if (orderItems.length === 0) {
-      throw new Error('Need to include at least one order item');
-    }
-    const [amount, vatAmount] = orderItems
-      .reduce(
-        (acc, cur) => {
-          acc[0] += BigInt(cur.amount);
-          acc[1] += BigInt(cur.vatAmount);
-          return acc;
-        },
-        [0n, 0n],
-      )
-      .map((e) => Number(e));
-    const transaction = {
-      description,
-      amount,
-      vatAmount,
-      payeeReference,
-      receiptReference,
-      orderItems,
+        : orderItems;
+    let transaction: {
+      description: string;
+      amount: number;
+      vatAmount: number;
+      payeeReference: string;
+      receiptReference: string | undefined;
+      orderItems?: readonly OrderItemListEntry[];
     };
+    if (orderItems != null) {
+      if (orderItems.length === 0) {
+        throw new Error('Need to include at least one order item if specified');
+      }
+      const [amount, vatAmount] = orderItems
+        .reduce(
+          (acc, cur) => {
+            acc[0] += BigInt(cur.amount);
+            acc[1] += BigInt(cur.vatAmount);
+            return acc;
+          },
+          [0n, 0n],
+        )
+        .map((e) => Number(e));
+      transaction = {
+        description,
+        amount,
+        vatAmount,
+        payeeReference,
+        receiptReference,
+        orderItems,
+      };
+    } else {
+      transaction = {
+        description,
+        amount: this.amount,
+        vatAmount: this.vatAmount,
+        payeeReference,
+        receiptReference,
+      };
+    }
     return this.client.axios
       .post(captureOperation.href, {
         transaction,
