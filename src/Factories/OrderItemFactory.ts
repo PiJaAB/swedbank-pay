@@ -19,7 +19,7 @@ export type OrderItemFactoryOptions = {
   readonly displayQuantityUnit?: string;
 };
 
-/** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
+// According to the docs: The percent value of the VAT multiplied by 100, so `25%` becomes `2500`.
 const VAT_RATE_SCALE = 100n;
 
 // The 4 decimal precision quantity of order items being purchased.
@@ -92,11 +92,10 @@ export default class OrderItemFactory {
   get vatAmount() {
     const { vatPercent, amount } = this;
     if (vatPercent == null || amount == null) return undefined;
-    // We need to divide by another 100 beyond VAT_RATE_SCALE
-    // since percent is not the correct range which would be 0-1
-    // but we cannot simply convert it to a 0-1 number since we
-    // are using BigInts.
-    return (amount * vatPercent) / (VAT_RATE_SCALE * 100n);
+    return (
+      amount -
+      (amount * (VAT_RATE_SCALE * 100n)) / (VAT_RATE_SCALE * 100n + vatPercent)
+    );
   }
 
   /** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
