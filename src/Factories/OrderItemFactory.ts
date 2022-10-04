@@ -2,13 +2,19 @@ import type { OrderItemType } from '../Types';
 import SwedbankPayClient from '../SwedbankPayClient';
 
 export type OrderItemFactoryOptions = {
+  /** The name of the order item. */
   readonly name?: string;
+  /** The type of the order item. `PAYMENT_FEE` is the amount you are charged with when you are paying with invoice. The amount can be defined in the `amount` field. */
   readonly type?: OrderItemType;
+  /** The 4 decimal precision quantity of order items being purchased. */
   readonly quantity?: number;
   readonly quantityUnit?: string;
-  readonly vatPercent?: number;
+  /** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
+  readonly vatPercent?: number | bigint;
+  /** The classification of the order item. Can be used for assigning the order item to a specific product category, such as `MobilePhone`. Note that `class` cannot contain spaces and must follow the regex pattern `[\w-]*`. Swedbank Pay may use this field for statistics. */
   readonly class?: string;
-  readonly unitPrice?: number;
+  /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
+  readonly unitPrice?: number | bigint;
   readonly reference?: string;
   readonly displayQuantityUnit?: string;
 };
