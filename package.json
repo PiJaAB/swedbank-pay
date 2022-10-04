@@ -14,7 +14,8 @@
     "lint:eslint-check": "cross-env NODE_ENV=production eslint-config-prettier 'src/**/*.js'",
     "lint:prettier": "cross-env NODE_ENV=production prettier -c 'src/**/*.{js,jsx,ts,tsx,json}'",
     "lint:eslint": "cross-env NODE_ENV=production eslint src --report-unused-disable-directives --color",
-    "lint:tsc": "cross-env NODE_ENV=production tsc --noEmit --pretty"
+    "lint:tsc": "cross-env NODE_ENV=production tsc --noEmit --pretty",
+    "prepack": "yarn build"
   },
   "files": [
     "lib/*",
