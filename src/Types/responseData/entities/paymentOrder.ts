@@ -1,6 +1,6 @@
-import type { PaymentOrderOperation } from '..';
+import { PaymentOrderOperation } from '../..';
 
-export interface PaymentOrderResponseData {
+export interface PaymentOrderEntity {
   readonly id: string;
   readonly created: string;
   readonly updated: string;
@@ -64,21 +64,4 @@ export interface PaymentOrderResponseData {
   readonly metadata: {
     readonly id: string;
   };
-}
-export interface PaymentOrderOperationEntity {
-  readonly method: 'GET' | 'PATCH' | 'POST';
-  readonly href: string;
-  readonly rel:
-    | 'update-order'
-    | 'abort'
-    | 'cancel'
-    | 'capture'
-    | 'reversal'
-    | 'redirect-checkout'
-    | 'view-checkout';
-  readonly contentType: string;
-}
-export interface PaymentOrderResponse {
-  readonly paymentOrder: PaymentOrderResponseData;
-  readonly operations: ReadonlyArray<PaymentOrderOperationEntity>;
 }

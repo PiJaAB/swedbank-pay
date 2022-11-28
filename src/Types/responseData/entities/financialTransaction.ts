@@ -1,6 +1,4 @@
-import { MaybePopulated } from '..';
-
-export interface FinancialTransactionListEntry {
+export interface FinancialTransactionEntity {
   /** The id of the financial transaction. */
   readonly id: string;
   /** The ISO-8601 date of when the payment order was created. */
@@ -13,7 +11,8 @@ export interface FinancialTransactionListEntry {
     | 'Authorization'
     | 'Cancellation'
     | 'Reversal'
-    | 'Sale';
+    | 'Sale'
+    | 'Verification';
   /**
    * The transaction number, useful when there’s need to reference the transaction in human communication.
    * Not usable for programmatic identification of the transaction, where id should be used instead.
@@ -49,16 +48,4 @@ export interface FinancialTransactionListEntry {
   readonly orderItems: {
     readonly id: string;
   };
-}
-
-export interface FinancialTransactionsResponse {
-  /** The parent payment order id. (The api is inconsistent so both camelcase and lowercase is supported) */
-  readonly paymentOrder?: string;
-  /** The parent payment order id. (The api is inconsistent so both camelcase and lowercase is supported) */
-  readonly paymentorder?: string;
-  /** The financial transactions object. */
-  readonly financialTransactions: MaybePopulated<{
-    /** The array of financial transactions. */
-    readonly financialTransactionList: ReadonlyArray<FinancialTransactionListEntry>;
-  }>;
 }

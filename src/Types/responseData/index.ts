@@ -1,14 +1,4 @@
-export * from './aborted';
-export * from './cancelled';
-export * from './failed';
-export * from './failedAttempts';
-export * from './financialTransactions';
-export * from './history';
-export * from './paymentOrder';
-export * from './paid';
-export * from './urls';
-export * from './metadata';
-export * from './payers';
-export * from './payeeInfo';
-export * from './orderItems';
-export * from './callback';
+export { default as PaymentOrderResponse } from './paymentOrder';
+export { default as PaymentResponse } from './payment';
+
+export * as ResponseEntity from './entities';

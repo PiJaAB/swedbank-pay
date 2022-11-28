@@ -16,6 +16,6 @@
   "compileOnSave": true,
   "include": [
     "src",
-    "types/*.d.ts", "src/LiveEntities/.ts",
+    "types/*.d.ts", "src/LiveEntities/.ts", "index.ts",
   ]
 }

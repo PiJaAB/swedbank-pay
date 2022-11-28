@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse, ResponseEntity } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'payer';
 
 export default class Payer extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.PayersResponse
+  PaymentOrderResponse.Payer
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);
@@ -26,7 +26,7 @@ export default class Payer extends PaymentOrderEntity<
    */
   getDevice(
     forceFresh?: boolean,
-  ): Promise<responseData.PayerDeviceResponse | null> {
+  ): Promise<ResponseEntity.PayerDeviceEntity | null> {
     return this.getAll(forceFresh).then(({ device }) => device ?? null);
   }
 }

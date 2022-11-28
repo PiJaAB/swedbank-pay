@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse, ResponseEntity } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'cancelled';
 
 export default class Cancelled extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.CancelledResponse
+  PaymentOrderResponse.Cancelled
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);
@@ -72,7 +72,7 @@ export default class Cancelled extends PaymentOrderEntity<
    */
   getTokens(
     forceFresh?: boolean,
-  ): Promise<ReadonlyArray<responseData.CancelledTokenResponse>> {
+  ): Promise<ReadonlyArray<ResponseEntity.CancelledTokenEntity>> {
     return this.getAll(forceFresh).then(({ tokens }) => tokens ?? []);
   }
 

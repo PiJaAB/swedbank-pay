@@ -1,4 +1,4 @@
-export * as responseData from './responseData';
+export * from './responseData';
 export * as requestData from './requestData';
 
 export type OrderItemType =
@@ -26,6 +26,22 @@ export type PaymentInstrument =
   | InvoicePaymentInstrument;
 
 export type PaymentOrderOperation = 'Purchase' | 'Recur' | 'Abort' | 'Verify';
+export type PaymentState = 'Ready' | 'Pending' | 'Failed' | 'Aborted';
+
+export interface CallbackData {
+  payment?: {
+    id: string;
+    number: number;
+  };
+  paymentOrder?: {
+    id: string;
+    instrument: PaymentInstrument;
+  };
+  transaction?: {
+    id: string;
+    number: number;
+  };
+}
 
 export { default as MaybePopulated } from './maybePopulated';
 

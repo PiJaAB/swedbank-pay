@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'metadata';
 
 export default class Metadata extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.MetadataResponse
+  PaymentOrderResponse.Metadata
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);

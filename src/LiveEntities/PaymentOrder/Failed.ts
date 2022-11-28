@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse, ResponseEntity } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'failed';
 
 export default class Failed extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.FailedResponse
+  PaymentOrderResponse.Failed
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);
@@ -18,7 +18,7 @@ export default class Failed extends PaymentOrderEntity<
    */
   getProblem(
     forceFresh?: boolean,
-  ): Promise<responseData.FailedProblemResponse | null> {
+  ): Promise<ResponseEntity.FailedProblemEntity | null> {
     return this.getAll(forceFresh).then(({ problem }) => problem ?? null);
   }
 }

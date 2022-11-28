@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse, ResponseEntity } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'financialTransactions';
 
 export default class FinancialTransactions extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.FinancialTransactionsResponse
+  PaymentOrderResponse.FinancialTransactions
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);
@@ -18,7 +18,7 @@ export default class FinancialTransactions extends PaymentOrderEntity<
    */
   getFinancialTransactionList(
     forceFresh?: boolean,
-  ): Promise<ReadonlyArray<responseData.FinancialTransactionListEntry>> {
+  ): Promise<ReadonlyArray<ResponseEntity.FinancialTransactionEntity>> {
     return this.getAll(forceFresh).then(
       ({ financialTransactionList }) => financialTransactionList ?? [],
     );

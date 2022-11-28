@@ -1,106 +1,99 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
 import {
   PaymentOrderOperation,
-  PaymentOrderResponse,
-  ResponseEntity,
+  PaymentResponse,
+  PaymentState,
 } from '../../Types';
-import Aborted from './Aborted';
-import Cancelled from './Cancelled';
-import Failed from './Failed';
-import FailedAttempts from './FailedAttempts';
-import FinancialTransactions from './FinancialTransactions';
-import History from './History';
-import Metadata from './Metadata';
-import OrderItems from './OrderItems';
-import Paid from './Paid';
-import PayeeInfo from './PayeeInfo';
-import Payer from './Payer';
-import Urls from './Urls';
+import { ResponseEntity } from '../../Types/responseData';
 
 const ID_PREFIX = '/psp/paymentorders/';
 
-function paramData(
-  data: PaymentOrderResponse,
+function getInstance<Class extends { id: string }>(
   client: SwedbankPayClient,
-  existing?: PaymentOrder,
+  ctor: new (client: SwedbankPayClient, id: string) => Class,
+  id: string | null | undefined,
+  existing: Class | null | undefined,
+): Class | null {
+  if (id == null) return null;
+  if (id === existing?.id) return existing;
+  return new ctor(client, id);
+}
+
+function paramData(
+  data: PaymentResponse,
+  client: SwedbankPayClient,
+  existing?: Payment,
 ) {
-  const { paymentOrder, operations } = data;
+  const { payment, operations } = data;
   return {
-    id: paymentOrder.id,
-    operation: paymentOrder.operation,
-    status: paymentOrder.status,
-    created: new Date(paymentOrder.created),
-    updated: new Date(paymentOrder.updated),
-    amount: paymentOrder.amount,
-    vatAmount: paymentOrder.vatAmount,
-    description: paymentOrder.description,
-    initiatingSystemUserAgent: paymentOrder.initiatingSystemUserAgent,
-    language: paymentOrder.language,
-    availableInstruments: [...paymentOrder.availableInstruments],
-    implementation: paymentOrder.implementation,
-    integration: paymentOrder.integration,
-    instrumentMode: paymentOrder.instrumentMode,
-    guestMode: paymentOrder.guestMode,
-    aborted:
-      !existing || paymentOrder.aborted.id !== existing.aborted.id
-        ? new Aborted(client, paymentOrder.aborted.id)
-        : existing.aborted,
+    id: payment.id,
+    number: payment.number,
+    created: new Date(payment.created),
+    updated: new Date(payment.updated),
+    instrument: payment.instrument,
+    state: payment.state,
+    operation: payment.operation ?? null,
+    currency: payment.currency,
+    amount: payment.amount,
+    vatAmount: payment.vatAmount ?? null,
+    remainingReversalAmount: payment.remainingReversalAmount ?? null,
+    remainingCaptureAmount: payment.remainingCaptureAmount ?? null,
+    remainingCancellationAmount: payment.remainingCancellationAmount ?? null,
+    description: payment.description,
+    payerReference: payment.payerReference ?? null,
+    initiatingSystemUserAgent: payment.initiatingSystemUserAgent,
+    userAgent: payment.userAgent,
+    language: payment.language,
+    recurrenceToken: payment.recurrenceToken ?? null,
+    paymentToken: payment.paymentToken ?? null,
+    prices: getInstance(client, Prices, payment.prices?.id, existing?.prices),
     cancelled:
-      !existing || paymentOrder.cancelled.id !== existing.cancelled.id
-        ? new Cancelled(client, paymentOrder.cancelled.id)
+      !existing || payment.cancelled.id !== existing.cancelled.id
+        ? new Cancelled(client, payment.cancelled.id)
         : existing.cancelled,
     failed:
-      !existing || paymentOrder.failed.id !== existing.failed.id
-        ? new Failed(client, paymentOrder.failed.id)
+      !existing || payment.failed.id !== existing.failed.id
+        ? new Failed(client, payment.failed.id)
         : existing.failed,
     failedAttempts:
-      !existing || paymentOrder.failedAttempts.id !== existing.failedAttempts.id
-        ? new FailedAttempts(client, paymentOrder.failedAttempts.id)
+      !existing || payment.failedAttempts.id !== existing.failedAttempts.id
+        ? new FailedAttempts(client, payment.failedAttempts.id)
         : existing.failedAttempts,
     financialTransactions:
       !existing ||
-      paymentOrder.financialTransactions.id !==
-        existing.financialTransactions.id
-        ? new FinancialTransactions(
-            client,
-            paymentOrder.financialTransactions.id,
-          )
+      payment.financialTransactions.id !== existing.financialTransactions.id
+        ? new FinancialTransactions(client, payment.financialTransactions.id)
         : existing.financialTransactions,
     history:
-      !existing || paymentOrder.history.id !== existing.history.id
-        ? new History(client, paymentOrder.history.id)
+      !existing || payment.history.id !== existing.history.id
+        ? new History(client, payment.history.id)
         : existing.history,
     metadata:
-      !existing || paymentOrder.metadata.id !== existing.metadata.id
-        ? new Metadata(client, paymentOrder.metadata.id)
+      !existing || payment.metadata.id !== existing.metadata.id
+        ? new Metadata(client, payment.metadata.id)
         : existing.metadata,
     orderItems:
-      !existing || paymentOrder.orderItems?.id !== existing.orderItems?.id
-        ? (paymentOrder.orderItems &&
-            new OrderItems(client, paymentOrder.orderItems.id)) ??
+      !existing || payment.orderItems?.id !== existing.orderItems?.id
+        ? (payment.orderItems &&
+            new OrderItems(client, payment.orderItems.id)) ??
           null
         : existing.orderItems,
     paid:
-      !existing || paymentOrder.paid.id !== existing.paid.id
-        ? new Paid(client, paymentOrder.paid.id)
+      !existing || payment.paid.id !== existing.paid.id
+        ? new Paid(client, payment.paid.id)
         : existing.paid,
     payeeInfo:
-      !existing || paymentOrder.payeeInfo.id !== existing.payeeInfo.id
-        ? new PayeeInfo(client, paymentOrder.payeeInfo.id)
+      !existing || payment.payeeInfo.id !== existing.payeeInfo.id
+        ? new PayeeInfo(client, payment.payeeInfo.id)
         : existing.payeeInfo,
     payer:
-      !existing || paymentOrder.payer?.id !== existing.payer?.id
-        ? (paymentOrder.payer && new Payer(client, paymentOrder.payer.id)) ??
-          null
+      !existing || payment.payer?.id !== existing.payer?.id
+        ? (payment.payer && new Payer(client, payment.payer.id)) ?? null
         : existing.payer,
     urls:
-      !existing || paymentOrder.urls.id !== existing.urls.id
-        ? new Urls(client, paymentOrder.urls.id)
+      !existing || payment.urls.id !== existing.urls.id
+        ? new Urls(client, payment.urls.id)
         : existing.urls,
-    remainingReversalAmount: paymentOrder.remainingReversalAmount ?? null,
-    remainingCaptureAmount: paymentOrder.remainingCaptureAmount ?? null,
-    remainingCancellationAmount:
-      paymentOrder.remainingCancellationAmount ?? null,
     operations: operations.reduce((acc, cur) => {
       acc[cur.rel] = cur;
       return acc;
@@ -108,31 +101,27 @@ function paramData(
   };
 }
 
-export default class PaymentOrder {
+export default class Payment {
   readonly id: string;
-  readonly operation: PaymentOrderOperation;
-  readonly status:
-    | 'Initialized'
-    | 'Ready'
-    | 'Pending'
-    | 'Paid'
-    | 'Failed'
-    | 'Aborted';
+  readonly number: number;
   readonly created: Date;
   readonly updated: Date;
+  readonly instrument: string;
+  readonly state: PaymentState;
+  readonly operation: PaymentOrderOperation | null;
+  readonly currency: string;
   readonly amount: number;
-  readonly vatAmount: number;
-  readonly description: string;
-  readonly initiatingSystemUserAgent: string;
-  readonly language: string;
-  readonly availableInstruments: string[];
-  readonly implementation: string;
-  readonly integration: string;
-  readonly instrumentMode: boolean;
-  readonly guestMode: boolean;
+  readonly vatAmount: number | null;
   readonly remainingReversalAmount: number | null;
   readonly remainingCaptureAmount: number | null;
   readonly remainingCancellationAmount: number | null;
+  readonly description: string;
+  readonly payerReference: string | null;
+  readonly initiatingSystemUserAgent: string;
+  readonly userAgent: string;
+  readonly language: string;
+  readonly recurrenceToken: string | null;
+  readonly paymentToken: string | null;
 
   readonly operations: {
     [key: string]: ResponseEntity.OperationEntity | undefined;
@@ -140,7 +129,7 @@ export default class PaymentOrder {
 
   private _inFlight: Promise<this> | null = null;
 
-  readonly aborted: Aborted;
+  readonly prices: Prices;
   readonly cancelled: Cancelled;
   readonly failed: Failed;
   readonly failedAttempts: FailedAttempts;
@@ -159,26 +148,32 @@ export default class PaymentOrder {
 
   constructor(
     client: SwedbankPayClient,
-    options: PaymentOrderResponse,
+    options: PaymentResponse,
     fetched: Date,
   ) {
     const data = paramData(options, client);
     this.id = data.id;
-    this.operation = data.operation;
-    this.status = data.status;
+    this.number = data.number;
     this.created = data.created;
     this.updated = data.updated;
+    this.instrument = data.instrument;
+    this.state = data.state;
+    this.operation = data.operation;
+    this.currency = data.currency;
     this.amount = data.amount;
     this.vatAmount = data.vatAmount;
+    this.remainingReversalAmount = data.remainingReversalAmount;
+    this.remainingCaptureAmount = data.remainingCaptureAmount;
+    this.remainingCancellationAmount = data.remainingCancellationAmount;
     this.description = data.description;
+    this.payerReference = data.payerReference;
     this.initiatingSystemUserAgent = data.initiatingSystemUserAgent;
+    this.userAgent = data.userAgent;
     this.language = data.language;
-    this.availableInstruments = data.availableInstruments;
-    this.implementation = data.implementation;
-    this.integration = data.integration;
-    this.instrumentMode = data.instrumentMode;
-    this.guestMode = data.guestMode;
-    this.aborted = data.aborted;
+    this.recurrenceToken = data.recurrenceToken;
+    this.paymentToken = data.paymentToken;
+
+    this.prices = data.prices;
     this.cancelled = data.cancelled;
     this.failed = data.failed;
     this.failedAttempts = data.failedAttempts;
@@ -190,12 +185,9 @@ export default class PaymentOrder {
     this.payeeInfo = data.payeeInfo;
     this.payer = data.payer;
     this.urls = data.urls;
-    this.remainingReversalAmount = data.remainingReversalAmount;
-    this.remainingCaptureAmount = data.remainingCaptureAmount;
-    this.remainingCancellationAmount = data.remainingCancellationAmount;
     this.operations = data.operations;
-    this.lastFetched = fetched;
 
+    this.lastFetched = fetched;
     this.client = client;
   }
 
@@ -203,7 +195,7 @@ export default class PaymentOrder {
     if (!id.startsWith('/')) {
       id = `${ID_PREFIX}${id}`;
     }
-    const res = await client.axios.get<PaymentOrderResponse>(id);
+    const res = await client.axios.get<PaymentResponse>(id);
     return new this(client, res.data, new Date());
   }
 
@@ -225,13 +217,13 @@ export default class PaymentOrder {
       receiptReference?: string;
     },
     mapper?: (
-      orderItem: ResponseEntity.OrderItemEntity,
+      orderItem: responseData.OrderItemListEntry,
       index: number,
-      list: ReadonlyArray<ResponseEntity.OrderItemEntity>,
+      list: ReadonlyArray<responseData.OrderItemListEntry>,
     ) =>
-      | ResponseEntity.OrderItemEntity
+      | responseData.OrderItemListEntry
       | null
-      | PromiseLike<ResponseEntity.OrderItemEntity | null>,
+      | PromiseLike<responseData.OrderItemListEntry | null>,
   ) {
     const captureOperation =
       this.operations.capture ??
@@ -246,7 +238,7 @@ export default class PaymentOrder {
     orderItems =
       orderItems && mapper != null
         ? await Promise.all(orderItems.map(mapper)).then((list) =>
-            list.filter((e): e is ResponseEntity.OrderItemEntity => e != null),
+            list.filter((e): e is responseData.OrderItemListEntry => e != null),
           )
         : orderItems;
     let transaction: {
@@ -255,7 +247,7 @@ export default class PaymentOrder {
       vatAmount: number;
       payeeReference: string;
       receiptReference: string | undefined;
-      orderItems?: readonly ResponseEntity.OrderItemEntity[];
+      orderItems?: readonly OrderItemListEntry[];
     };
     if (orderItems != null) {
       if (orderItems.length === 0) {
@@ -263,7 +255,7 @@ export default class PaymentOrder {
       }
       const [amount, vatAmount] = orderItems
         .reduce(
-          (acc: [bigint, bigint], cur) => {
+          (acc, cur) => {
             acc[0] += BigInt(cur.amount);
             acc[1] += BigInt(cur.vatAmount);
             return acc;
@@ -313,7 +305,7 @@ export default class PaymentOrder {
       abortReason,
     };
     const promise = this.client.axios
-      .patch<PaymentOrderResponse>(abortOpreation.href, {
+      .patch<PaymentResponse>(abortOpreation.href, {
         paymentOrder,
       })
       .then((res): this | PromiseLike<this> => {
@@ -361,7 +353,7 @@ export default class PaymentOrder {
       .then(() => this.refresh(true).catch(() => this));
   }
 
-  private assignResponseData(resData: PaymentOrderResponse) {
+  private assignResponseData(resData: PaymentResponse) {
     Object.assign(this, paramData(resData, this.client, this));
   }
 
@@ -373,7 +365,7 @@ export default class PaymentOrder {
   refresh(force?: boolean) {
     if (force || this._inFlight == null) {
       const promise = this.client.axios
-        .get<PaymentOrderResponse>(this.id)
+        .get<PaymentResponse>(this.id)
         .then((res): this | PromiseLike<this> => {
           if (this._inFlight === promise) {
             this._inFlight = null;

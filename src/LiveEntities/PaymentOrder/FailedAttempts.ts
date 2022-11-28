@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse, ResponseEntity } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'failedAttempts';
 
 export default class FailedAttempts extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.FailedAttemptsResponse
+  PaymentOrderResponse.FailedAttempts
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);
@@ -18,7 +18,7 @@ export default class FailedAttempts extends PaymentOrderEntity<
    */
   getFailedAttemptsList(
     forceFresh?: boolean,
-  ): Promise<ReadonlyArray<responseData.FailedAttemptListEntry>> {
+  ): Promise<ReadonlyArray<ResponseEntity.FailedAttemptEntity>> {
     return this.getAll(forceFresh).then(
       ({ failedAttemptList }) => failedAttemptList ?? [],
     );

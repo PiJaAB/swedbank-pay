@@ -1,12 +1,12 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
-import { responseData } from '../../Types';
+import { PaymentOrderResponse, ResponseEntity } from '../../Types';
 import { PaymentOrderEntity } from './paymentOrderEntity';
 
 const ENTITY_KEY = 'history';
 
 export default class History extends PaymentOrderEntity<
   typeof ENTITY_KEY,
-  responseData.HistoryResponse
+  PaymentOrderResponse.History
 > {
   constructor(client: SwedbankPayClient, id: string) {
     super(client, ENTITY_KEY, id);
@@ -18,7 +18,7 @@ export default class History extends PaymentOrderEntity<
    */
   getHistoryList(
     forceFresh?: boolean,
-  ): Promise<ReadonlyArray<responseData.HistoryListEntry>> {
+  ): Promise<ReadonlyArray<ResponseEntity.HistoryEntity>> {
     return this.getAll(forceFresh).then(({ historyList }) => historyList ?? []);
   }
 }

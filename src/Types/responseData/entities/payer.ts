@@ -1,6 +1,4 @@
-import { MaybePopulated } from '..';
-
-export interface PayerDeviceResponse {
+export interface PayerDeviceEntity {
   readonly detectionAccuracy: number;
   /** The IP address that connected to Swedbank Pay's checkout */
   readonly ipAddress: string;
@@ -30,16 +28,16 @@ export interface PayerDeviceResponse {
   readonly browserJavaEnabled: boolean;
 }
 
-export interface PayersResponse {
-  /** The parent payment order id. (The api is inconsistent so both camelcase and lowercase is supported) */
-  readonly paymentOrder?: string;
-  /** The parent payment order id. (The api is inconsistent so both camelcase and lowercase is supported) */
-  readonly paymentorder?: string;
-  /** The payer object. */
-  readonly payer: MaybePopulated<{
-    /** The name of the payer */
-    readonly name: string;
-    /** Device infromation about the browser that used Swedbank Pay's payment service */
-    readonly device?: PayerDeviceResponse;
-  }>;
+export interface PayerEntity {
+  /**
+   * The relative URL and unique identifier of the `payer` resource.
+   * Please read about [URL Usage](https://developer.swedbankpay.com/introduction#url-usage) to understand how this and other URLs should be used in your solution.
+   */
+  readonly id: string;
+  /** The name of the payer */
+  readonly name: string;
+  /** The payee specific reference to the payer */
+  readonly reference: string;
+  /** Device infromation about the browser that used Swedbank Pay's payment service */
+  readonly device?: PayerDeviceEntity;
 }

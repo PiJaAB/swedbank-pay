@@ -1,5 +1,3 @@
-import type { MaybePopulated } from '..';
-
 /** Possible event names that can occurr in the [historyList](../interfaces/Types.responseData.HistoryResponse.html#history) */
 export enum HistoryEvent {
   /** This event will occur as soon as the merchant initiates the payment order. */
@@ -59,7 +57,7 @@ export enum HistoryEvent {
   PaymentPartialReversed = 'PaymentPartialReversed',
 }
 
-export interface HistoryListEntry {
+export interface HistoryEntity {
   /** The ISO-8601 date of when the history event was created. */
   readonly created: string;
   /** Name of the history event. See enum documentation for more information. */
@@ -72,16 +70,4 @@ export interface HistoryListEntry {
   readonly prefill?: boolean;
   /** `Consumer`, `Merchant` or `Systemś. The party that initiated the event. */
   readonly initiatedBy: 'Consumer' | 'Merchant' | 'System';
-}
-
-export interface HistoryResponse {
-  /** The parent payment order id. (The api is inconsistent so both camelcase and lowercase is supported) */
-  readonly paymentOrder?: string;
-  /** The parent payment order id. (The api is inconsistent so both camelcase and lowercase is supported) */
-  readonly paymentorder?: string;
-  /** The history object. */
-  readonly history: MaybePopulated<{
-    /** The array of history objects. */
-    readonly historyList: ReadonlyArray<HistoryListEntry>;
-  }>;
 }
