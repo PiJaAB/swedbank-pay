@@ -9,16 +9,21 @@ export type OrderItemType =
   | 'DISCOUNT'
   | 'VALUE_CODE'
   | 'OTHER';
+
+export type InvoicePaymentInstrument =
+  | 'Invoice'
+  | 'Invoice-PayExFinancingNo'
+  | 'Invoice-PayExFinancingSe'
+  | 'Invoice-PayMonthlyInvoiceSe';
+
 export type PaymentInstrument =
   | 'CreditCard'
-  | 'Invoice'
   | 'Vipps'
   | 'Swish'
   | 'Trustly'
   | 'CreditAccount'
-  | 'Invoice-PayExFinancingNo'
-  | 'Invoice-PayExFinancingSe'
-  | 'Invoice-PayMonthlyInvoiceSe';
+  | 'MobilePay'
+  | InvoicePaymentInstrument;
 
 export type PaymentOrderOperation = 'Purchase' | 'Recur' | 'Abort' | 'Verify';
 

@@ -1,4 +1,4 @@
-import { PaymentOrderOperation, responseData, requestData } from '../Types';
+import { PaymentOrderOperation, responseData, requestData, PaymentInstrument } from '../Types';
 import PayerFactory, { PayerFactoryOptions } from './PayerFactory';
 import OrderItemFactory, {
   QUANTITY_PRECISION,
@@ -14,16 +14,18 @@ export type Serialized = PaymentOrderFactory['toJSON'] extends () => infer Q
 
 export type PaymentOrderFactoryOptions = {
   readonly paymentorder?: {
-    readonly generatePaymentToken?: boolean;
-    readonly generateRecurrenceToken?: boolean;
-    readonly recurrenceToken?: string;
-    readonly operation?: PaymentOrderOperation;
-    readonly language?: string;
-    readonly userAgent?: string;
-    readonly payeeInfo?: Partial<requestData.PaymentOrder['payeeInfo']>;
-    readonly payer?: PayerFactoryOptions;
     readonly currency?: string;
     readonly description?: string;
+    readonly generatePaymentToken?: boolean;
+    readonly generateRecurrenceToken?: boolean;
+    readonly instrument?: string;
+    readonly language?: string;
+    readonly operation?: PaymentOrderOperation;
+    readonly recurrenceToken?: string;
+    readonly userAgent?: string;
+
+    readonly payeeInfo?: Partial<requestData.PaymentOrder['payeeInfo']>;
+    readonly payer?: PayerFactoryOptions;
     readonly urls?: {
       readonly callbackUrl?: string;
       readonly completeUrl?: string;
@@ -39,16 +41,17 @@ export type PaymentOrderFactoryOptions = {
 export default class PaymentOrderFactory {
   private _currency: string | undefined;
   private _description: string | undefined;
-  private _operation: PaymentOrderOperation | undefined;
-  private _language: string | undefined;
-  private _reference: string | undefined;
-  private _userAgent: string | undefined;
-  private _productCategory: string | undefined;
-  private _subsite: string | undefined;
-  private _payeeName: string | undefined;
-  private _orderReference: string | undefined;
   private _generatePaymentToken: boolean | undefined;
   private _generateRecurrenceToken: boolean | undefined;
+  private _instrument: PaymentInstrument | undefined;
+  private _language: string | undefined;
+  private _operation: PaymentOrderOperation | undefined;
+  private _productCategory: string | undefined;
+  private _payeeName: string | undefined;
+  private _reference: string | undefined;
+  private _subsite: string | undefined;
+  private _userAgent: string | undefined;
+  private _orderReference: string | undefined;
   private _recurrenceToken: string | undefined;
   private _hostUrls: string[];
   private _callbackUrl:
@@ -74,8 +77,8 @@ export default class PaymentOrderFactory {
     client: SwedbankPayClient,
     { paymentorder, orderItems }: PaymentOrderFactoryOptions = {},
   ) {
-    this._language = paymentorder?.language;
     this._currency = paymentorder?.currency;
+    this._language = paymentorder?.language;
     this._description = paymentorder?.description;
     this._operation = paymentorder?.operation;
     this._reference = paymentorder?.payeeInfo?.payeeReference;
@@ -102,8 +105,6 @@ export default class PaymentOrderFactory {
       orderItems?.map((item) => new OrderItemFactory(client, item)) ?? [];
     this.client = client;
   }
-
-  /*
 
   /**
    * The amount of the purchase
@@ -402,6 +403,25 @@ export default class PaymentOrderFactory {
     return this;
   }
 
+  /**
+   * The instrument to use for this purchace (must be enabled in Swedbank Pay)
+   * By default it will present all available instruments to the customer
+   */
+  get instrument() {
+    return this._instrument;
+  }
+
+  /**
+   * Sets the instrument to use for this purchace (must be enabled in Swedbank Pay)
+   * By default it will present all available instruments to the customer
+   * @param newInstrument The new operation
+   * @returns The purchase factory for chaining.
+   */
+  setInstrument(newInstrument?: PaymentInstrument) {
+    this._instrument = newInstrument;
+    return this;
+  }
+
   /** The language of the purchase */
   get language() {
     return this._language;
@@ -580,6 +600,7 @@ export default class PaymentOrderFactory {
     const ret = {
       generatePaymentToken: this._generatePaymentToken,
       generateRecurrenceToken: this._generateRecurrenceToken,
+      instrument: this._instrument,
       recurrenceToken: this._recurrenceToken,
       operation: this.operation,
       language: this.language,
