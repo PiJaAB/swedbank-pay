@@ -1,4 +1,4 @@
-import type { OrderItemType } from '../Types';
+import type { IntTypeMap, OrderItemType } from '../Types';
 import SwedbankPayClient from '../SwedbankPayClient';
 
 export type OrderItemFactoryOptions = {
@@ -25,9 +25,9 @@ const VAT_RATE_SCALE = 100n;
 // The 4 decimal precision quantity of order items being purchased.
 export const QUANTITY_PRECISION = 10000n;
 
-export default class OrderItemFactory {
-  private _vatPercent: bigint | undefined;
-  private _unitPrice: bigint | undefined;
+export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
+  private _vatPercent: IntTypeMap[IntTypeName] | undefined;
+  private _unitPrice: IntTypeMap[IntTypeName] | undefined;
 
   private _quantity: number;
 
@@ -39,11 +39,14 @@ export default class OrderItemFactory {
 
   private _type: OrderItemType | undefined;
 
-  readonly client: SwedbankPayClient;
+  readonly client: SwedbankPayClient<IntTypeName>;
 
-  constructor(client: SwedbankPayClient, options?: OrderItemFactoryOptions);
   constructor(
-    client: SwedbankPayClient,
+    client: SwedbankPayClient<IntTypeName>,
+    options?: OrderItemFactoryOptions,
+  );
+  constructor(
+    client: SwedbankPayClient<IntTypeName>,
     {
       name,
       type,
@@ -57,9 +60,9 @@ export default class OrderItemFactory {
     }: OrderItemFactoryOptions = {},
   ) {
     this.client = client;
-    const bigIntUnitPrice = unitPrice != null ? BigInt(unitPrice) : undefined;
-    this._vatPercent = vatPercent != null ? BigInt(vatPercent) : undefined;
-    this._unitPrice = bigIntUnitPrice;
+    const bigIntUnitPrice = ;
+    this._vatPercent = vatPercent != null ? client.asNumType(vatPercent) : undefined;
+    this._unitPrice = unitPrice != null ? client.asNumType(unitPrice) : undefined;
     this._name = name;
     this._class = className;
     this._type = type;
@@ -70,18 +73,17 @@ export default class OrderItemFactory {
   }
 
   /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
-  get unitPrice(): bigint | undefined {
+  get unitPrice(): IntTypeMap[IntTypeName] | undefined {
     return this._unitPrice;
   }
 
   /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
   setUnitPrice(
-    newUnitPrice: number | bigint,
-    vatPercent?: number | bigint,
+    newUnitPrice: IntTypeMap[IntTypeName],
+    vatPercent?: IntTypeMap[IntTypeName],
   ): void {
-    if (vatPercent != null) this._vatPercent = BigInt(vatPercent);
-    const bigIntUnitPrice = BigInt(newUnitPrice);
-    this._unitPrice = bigIntUnitPrice;
+    if (vatPercent != null) this._vatPercent = vatPercent;
+    this._unitPrice = newUnitPrice;;
   }
 
   /**
@@ -99,13 +101,13 @@ export default class OrderItemFactory {
   }
 
   /** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
-  get vatPercent(): bigint | undefined {
+  get vatPercent(): IntTypeMap[IntTypeName] | undefined {
     return this._vatPercent;
   }
 
   /** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
-  setVatPercent(newVatPercent: number | bigint): OrderItemFactory {
-    this._vatPercent = BigInt(newVatPercent);
+  setVatPercent(newVatPercent: IntTypeMap[IntTypeName]): this {
+    this._vatPercent = newVatPercent;
     return this;
   }
 
@@ -115,7 +117,7 @@ export default class OrderItemFactory {
   }
 
   /** The classification of the order item. Can be used for assigning the order item to a specific product category, such as `MobilePhone`. Note that `class` cannot contain spaces and must follow the regex pattern `[\w-]*`. Swedbank Pay may use this field for statistics. */
-  setClass(newClass: string): OrderItemFactory {
+  setClass(newClass: string): this {
     this._class = newClass;
     return this;
   }
@@ -126,7 +128,7 @@ export default class OrderItemFactory {
   }
 
   /** The name of the order item. */
-  setName(newName: string): OrderItemFactory {
+  setName(newName: string): this {
     this._name = newName;
     return this;
   }
@@ -137,7 +139,7 @@ export default class OrderItemFactory {
   }
 
   /** The type of the order item. `PAYMENT_FEE` is the amount you are charged with when you are paying with invoice. The amount can be defined in the `amount` field. */
-  setType(newType: OrderItemType): OrderItemFactory {
+  setType(newType: OrderItemType): this {
     this._type = newType;
     return this;
   }
@@ -148,7 +150,7 @@ export default class OrderItemFactory {
   }
 
   /** The 4 decimal precision quantity of order items being purchased. */
-  setQuantity(newQuantity: number): OrderItemFactory {
+  setQuantity(newQuantity: number): this {
     this._quantity = newQuantity;
     return this;
   }
@@ -157,7 +159,7 @@ export default class OrderItemFactory {
     return this._quantityUnit;
   }
 
-  setQuantityUnit(newQuantityUnit: string): OrderItemFactory {
+  setQuantityUnit(newQuantityUnit: string): this {
     this._quantityUnit = newQuantityUnit;
     return this;
   }
@@ -166,7 +168,7 @@ export default class OrderItemFactory {
     return this._reference;
   }
 
-  setReference(newReference: string): OrderItemFactory {
+  setReference(newReference: string): this {
     this._reference = newReference;
     return this;
   }
@@ -175,7 +177,7 @@ export default class OrderItemFactory {
     return this._displayQuantityUnit;
   }
 
-  setDisplayQuantityUnit(newDisplayQuantityUnit: string): OrderItemFactory {
+  setDisplayQuantityUnit(newDisplayQuantityUnit: string): this {
     this._displayQuantityUnit = newDisplayQuantityUnit;
     return this;
   }

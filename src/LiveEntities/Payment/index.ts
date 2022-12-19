@@ -1,27 +1,103 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
 import {
+  IntTypeMap,
   PaymentOrderOperation,
   PaymentResponse,
   PaymentState,
 } from '../../Types';
 import { ResponseEntity } from '../../Types/responseData';
+import PaymentSubEntity from './PaymentSubEntity';
 
-const ID_PREFIX = '/psp/paymentorders/';
+type SubEntityKey = {
+  [Key in keyof Payment<keyof IntTypeMap>]-?: Payment<
+    keyof IntTypeMap
+  >[Key] extends PaymentSubEntity<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any
+  > | null
+    ? Key
+    : never;
+}[keyof Payment<keyof IntTypeMap>];
 
-function getInstance<Class extends { id: string }>(
-  client: SwedbankPayClient,
-  ctor: new (client: SwedbankPayClient, id: string) => Class,
-  id: string | null | undefined,
-  existing: Class | null | undefined,
-): Class | null {
-  if (id == null) return null;
-  if (id === existing?.id) return existing;
-  return new ctor(client, id);
+type SimpleAccessKey = {
+  [Key in SubEntityKey]: Payment<
+    keyof IntTypeMap
+  >[Key] extends PaymentSubEntity<
+    Key,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any
+  > | null
+    ? Key
+    : never;
+}[SubEntityKey];
+
+function getInstance<Key extends SimpleAccessKey>(
+  client: SwedbankPayClient<keyof IntTypeMap>,
+  data: PaymentResponse['payment'],
+  key: Key,
+  existingOrder?: Payment,
+): Payment[Key];
+function getInstance<Key extends SubEntityKey>(
+  client: SwedbankPayClient<keyof IntTypeMap>,
+  data: PaymentResponse['payment'],
+  key: Key,
+  dataAccessKey: Payment[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | PaymentSubEntity<infer AccessKey, any>
+    | undefined
+    | null
+    ? AccessKey
+    : never,
+  existingOrder?: Payment,
+): Payment[Key];
+function getInstance<Key extends SubEntityKey>(
+  client: SwedbankPayClient<keyof IntTypeMap>,
+  data: PaymentResponse['payment'],
+  key: Key,
+  dataAccessKeyOrExisting:
+    | (Payment[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        | PaymentSubEntity<infer AccessKey, any>
+        | undefined
+        | null
+        ? AccessKey
+        : never)
+    | Payment
+    | undefined,
+  existingOrder?: Payment,
+): Payment[Key] {
+  let dataAccessKey: Payment[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | PaymentSubEntity<infer AccessKey, any>
+    | undefined
+    | null
+    ? AccessKey
+    : never;
+  if (
+    typeof dataAccessKeyOrExisting !== 'object' &&
+    dataAccessKeyOrExisting !== undefined
+  ) {
+    dataAccessKey = dataAccessKeyOrExisting;
+  } else {
+    dataAccessKey = key as string | symbol | number as typeof dataAccessKey;
+  }
+  if (typeof dataAccessKeyOrExisting === 'object') {
+    existingOrder = dataAccessKeyOrExisting;
+  }
+  const existingValue = existingOrder?.[key];
+  const id = data[key]?.id;
+  if (id == null) return null as Payment[Key];
+  if (id === existingValue?.id) return existingValue;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new PaymentSubEntity<any, any>(
+    client,
+    dataAccessKey,
+    id,
+  ) as Payment[Key];
 }
 
-function paramData(
+function paramData<NumberType extends keyof IntTypeMap>(
   data: PaymentResponse,
-  client: SwedbankPayClient,
+  client: SwedbankPayClient<NumberType>,
   existing?: Payment,
 ) {
   const { payment, operations } = data;
@@ -46,54 +122,16 @@ function paramData(
     language: payment.language,
     recurrenceToken: payment.recurrenceToken ?? null,
     paymentToken: payment.paymentToken ?? null,
-    prices: getInstance(client, Prices, payment.prices?.id, existing?.prices),
-    cancelled:
-      !existing || payment.cancelled.id !== existing.cancelled.id
-        ? new Cancelled(client, payment.cancelled.id)
-        : existing.cancelled,
-    failed:
-      !existing || payment.failed.id !== existing.failed.id
-        ? new Failed(client, payment.failed.id)
-        : existing.failed,
-    failedAttempts:
-      !existing || payment.failedAttempts.id !== existing.failedAttempts.id
-        ? new FailedAttempts(client, payment.failedAttempts.id)
-        : existing.failedAttempts,
-    financialTransactions:
-      !existing ||
-      payment.financialTransactions.id !== existing.financialTransactions.id
-        ? new FinancialTransactions(client, payment.financialTransactions.id)
-        : existing.financialTransactions,
-    history:
-      !existing || payment.history.id !== existing.history.id
-        ? new History(client, payment.history.id)
-        : existing.history,
-    metadata:
-      !existing || payment.metadata.id !== existing.metadata.id
-        ? new Metadata(client, payment.metadata.id)
-        : existing.metadata,
-    orderItems:
-      !existing || payment.orderItems?.id !== existing.orderItems?.id
-        ? (payment.orderItems &&
-            new OrderItems(client, payment.orderItems.id)) ??
-          null
-        : existing.orderItems,
-    paid:
-      !existing || payment.paid.id !== existing.paid.id
-        ? new Paid(client, payment.paid.id)
-        : existing.paid,
-    payeeInfo:
-      !existing || payment.payeeInfo.id !== existing.payeeInfo.id
-        ? new PayeeInfo(client, payment.payeeInfo.id)
-        : existing.payeeInfo,
-    payer:
-      !existing || payment.payer?.id !== existing.payer?.id
-        ? (payment.payer && new Payer(client, payment.payer.id)) ?? null
-        : existing.payer,
-    urls:
-      !existing || payment.urls.id !== existing.urls.id
-        ? new Urls(client, payment.urls.id)
-        : existing.urls,
+    prices: getInstance(client, payment, 'prices', existing),
+    transactions: getInstance(client, payment, 'transactions', existing),
+    authorizations: getInstance(client, payment, 'authorizations', existing),
+    captures: getInstance(client, payment, 'captures', existing),
+    reversals: getInstance(client, payment, 'reversals', existing),
+    cancellations: getInstance(client, payment, 'cancellations', existing),
+    urls: getInstance(client, payment, 'urls', existing),
+    payeeInfo: getInstance(client, payment, 'payeeInfo', existing),
+    payers: getInstance(client, payment, 'payers', existing),
+    metadata: getInstance(client, payment, 'metadata', existing),
     operations: operations.reduce((acc, cur) => {
       acc[cur.rel] = cur;
       return acc;
@@ -101,7 +139,7 @@ function paramData(
   };
 }
 
-export default class Payment {
+export default class Paymen0t<IntType extends keyof IntTypeMap> {
   readonly id: string;
   readonly number: number;
   readonly created: Date;
@@ -129,18 +167,34 @@ export default class Payment {
 
   private _inFlight: Promise<this> | null = null;
 
-  readonly prices: Prices;
-  readonly cancelled: Cancelled;
-  readonly failed: Failed;
-  readonly failedAttempts: FailedAttempts;
-  readonly financialTransactions: FinancialTransactions;
-  readonly history: History;
-  readonly metadata: Metadata;
-  readonly orderItems: OrderItems | null;
-  readonly paid: Paid;
-  readonly payeeInfo: PayeeInfo;
-  readonly payer: Payer | null;
-  readonly urls: Urls;
+  readonly prices: PaymentSubEntity<'prices', PaymentResponse.PriceList> | null;
+  readonly transactions: PaymentSubEntity<
+    'transactions',
+    PaymentResponse.TransactionList
+  > | null;
+  readonly authorizations: PaymentSubEntity<
+    'authorizations',
+    PaymentResponse.AuthorizationList
+  > | null;
+  readonly captures: PaymentSubEntity<
+    'captures',
+    PaymentResponse.CaptureList
+  > | null;
+  readonly reversals: PaymentSubEntity<
+    'reversals',
+    PaymentResponse.ReversalList
+  > | null;
+  readonly cancellations: PaymentSubEntity<
+    'cancellations',
+    PaymentResponse.CancellationList
+  > | null;
+  readonly urls: PaymentSubEntity<'urls', PaymentResponse.URLs> | null;
+  readonly payeeInfo: PaymentSubEntity<'payeeInfo', PaymentResponse.PayeeInfo>;
+  readonly payers: PaymentSubEntity<'payers', PaymentResponse.Payers> | null;
+  readonly metadata: PaymentSubEntity<
+    'metadata',
+    PaymentResponse.Metadata
+  > | null;
 
   readonly lastFetched: Date;
 
@@ -174,17 +228,16 @@ export default class Payment {
     this.paymentToken = data.paymentToken;
 
     this.prices = data.prices;
-    this.cancelled = data.cancelled;
-    this.failed = data.failed;
-    this.failedAttempts = data.failedAttempts;
-    this.financialTransactions = data.financialTransactions;
-    this.history = data.history;
-    this.metadata = data.metadata;
-    this.orderItems = data.orderItems;
-    this.paid = data.paid;
-    this.payeeInfo = data.payeeInfo;
-    this.payer = data.payer;
+    this.transactions = data.transactions;
+    this.authorizations = data.authorizations;
+    this.captures = data.captures;
+    this.reversals = data.reversals;
+    this.cancellations = data.cancellations;
     this.urls = data.urls;
+    this.payeeInfo = data.payeeInfo;
+    this.payers = data.payers;
+    this.metadata = data.metadata;
+
     this.operations = data.operations;
 
     this.lastFetched = fetched;
@@ -193,38 +246,86 @@ export default class Payment {
 
   static async load(client: SwedbankPayClient, id: string) {
     if (!id.startsWith('/')) {
-      id = `${ID_PREFIX}${id}`;
+      id = `/${id}`;
     }
     const res = await client.axios.get<PaymentResponse>(id);
     return new this(client, res.data, new Date());
   }
 
   /**
-   * Whether this paymentOrder is paid and captured in full.
+   * Get the amount that has been captured.
    */
-  get fullyCaptured() {
-    return this.status === 'Paid' && !this.remainingCaptureAmount;
+  async getCapturedAmount(): Promise<number>;
+  async getCapturedAmount(
+    detailedObject: true,
+  ): Promise<{ amount: number; vatAmaunt: number }>;
+  async getCapturedAmount(
+    detailedObject?: boolean,
+  ): Promise<{ amount: number; vatAmount: number } | number>;
+  async getCapturedAmount(detailedObject?: boolean) {
+    const transactionList = await this.transactions?.get('transactionList');
+    if (!transactionList) {
+      return 0;
+    }
+    const capturedAmount = transactionList.reduce(
+      (acc, cur) =>
+        cur.type === 'Capture' && cur.state === 'Completed'
+          ? acc + cur.amount
+          : acc,
+      0,
+    );
+
+    return capturedAmount;
   }
 
-  async capture(
-    {
-      description,
-      payeeReference,
-      receiptReference,
-    }: {
-      description: string;
-      payeeReference: string;
-      receiptReference?: string;
-    },
-    mapper?: (
-      orderItem: responseData.OrderItemListEntry,
-      index: number,
-      list: ReadonlyArray<responseData.OrderItemListEntry>,
-    ) =>
-      | responseData.OrderItemListEntry
-      | null
-      | PromiseLike<responseData.OrderItemListEntry | null>,
-  ) {
+  /**
+   * Whether this paymentOrder is paid and captured in full.
+   */
+  async isFullyCaptured() {
+    const capturedAmount = await this.getCapturedAmount();
+    return capturedAmount >= this.amount;
+  }
+
+  /**
+   * Get the amount that has been reversed.
+   */
+  async getReversedAmount() {
+    const transactionList = await this.transactions?.get('transactionList');
+    if (!transactionList) {
+      return 0;
+    }
+    const reversedAmount = transactionList.reduce(
+      (acc, cur) =>
+        cur.type === 'Reversal' && cur.state === 'Completed'
+          ? acc + cur.amount
+          : acc,
+      0,
+    );
+
+    return reversedAmount;
+  }
+
+  /**
+   * Whether this paymentOrder is paid and reversed in full.
+   */
+  async isFullyReversed() {
+    const reversedAmount = await this.getReversedAmount();
+    return reversedAmount >= this.amount;
+  }
+
+  async capture({
+    description,
+    payeeReference,
+    receiptReference,
+    amount,
+    vatAmount,
+  }: {
+    description: string;
+    payeeReference: string;
+    receiptReference?: string;
+    amount?: number | bigint;
+    vatAmount?: number | bigint;
+  }) {
     const captureOperation =
       this.operations.capture ??
       (await this.refresh().then(
@@ -233,59 +334,21 @@ export default class Payment {
     if (captureOperation == null) {
       throw new Error('No capture operation available');
     }
-    let orderItems = await this.orderItems?.getOrderItemList();
-    if (orderItems != null && orderItems.length === 0) orderItems = undefined;
-    orderItems =
-      orderItems && mapper != null
-        ? await Promise.all(orderItems.map(mapper)).then((list) =>
-            list.filter((e): e is responseData.OrderItemListEntry => e != null),
-          )
-        : orderItems;
-    let transaction: {
-      description: string;
-      amount: number;
-      vatAmount: number;
-      payeeReference: string;
-      receiptReference: string | undefined;
-      orderItems?: readonly OrderItemListEntry[];
+    const maxCapture = this.remainingCaptureAmount ?? this.amount;
+    const amountToCapture = amount ?? maxCapture;
+    const alreadyCapturedAmount = vatAmount ?? this.amount - maxCapture;
+    const vatAmountToCapture =
+      vatAmount ??
+      (alreadyCapturedAmount === 0
+        ? this.vatAmount
+        : Math.round(amountToCapture * (this.vatAmount / this.amount)));
+    const transaction = {
+      description,
+      amount,
+      vatAmount,
+      payeeReference,
+      receiptReference,
     };
-    if (orderItems != null) {
-      if (orderItems.length === 0) {
-        throw new Error('Need to include at least one order item if specified');
-      }
-      const [amount, vatAmount] = orderItems
-        .reduce(
-          (acc, cur) => {
-            acc[0] += BigInt(cur.amount);
-            acc[1] += BigInt(cur.vatAmount);
-            return acc;
-          },
-          [0n, 0n],
-        )
-        .map((e) => Number(e));
-      transaction = {
-        description,
-        amount,
-        vatAmount,
-        payeeReference,
-        receiptReference,
-        orderItems,
-      };
-    } else {
-      const amount = this.remainingCaptureAmount ?? this.amount;
-      const alreadyCapturedAmount = this.amount - amount;
-      const vatAmount =
-        alreadyCapturedAmount === 0
-          ? this.vatAmount
-          : Math.round(amount * (this.vatAmount / this.amount));
-      transaction = {
-        description,
-        amount,
-        vatAmount,
-        payeeReference,
-        receiptReference,
-      };
-    }
     return this.client.axios
       .post(captureOperation.href, {
         transaction,

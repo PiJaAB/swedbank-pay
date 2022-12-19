@@ -7,6 +7,7 @@ export namespace Payment {
   export type Capture = import('./captures').Capture;
   export type CaptureList = import('./captures').CaptureList;
   export type Metadata = import('./metadata').Metadata;
+  export type Payers = import('./payers').Payers;
   export type PayeeInfo = import('./payeeInfo').PayeeInfo;
   export type PriceList = import('./prices').PriceList;
   export type Reversat = import('./reversals').Reversal;

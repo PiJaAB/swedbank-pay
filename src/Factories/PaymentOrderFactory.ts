@@ -1,4 +1,9 @@
-import { PaymentOrderOperation, responseData, requestData, PaymentInstrument } from '../Types';
+import {
+  PaymentOrderOperation,
+  PaymentOrderResponse,
+  requestData,
+  PaymentInstrument,
+} from '../Types';
 import PayerFactory, { PayerFactoryOptions } from './PayerFactory';
 import OrderItemFactory, {
   QUANTITY_PRECISION,
@@ -692,7 +697,7 @@ export default class PaymentOrderFactory {
       },
     };
 
-    const res = await this.client.axios.post<responseData.PaymentOrderResponse>(
+    const res = await this.client.axios.post<PaymentOrderResponse>(
       '/psp/paymentorders',
       purchase,
     );

@@ -317,7 +317,7 @@ export default class PayerFactory {
   }
 
   /**
-   * The e-mail address of the payer. Will be used to prefill the Checkin as well as on the payer’s profile, if not already set.
+   * The mobile phone number of the payer. Will be used to prefill the Checkin as well as on the payer’s profile, if not already set.
    * Increases the chance for frictionless [3-D Secure 2 flow](https://developer.swedbankpay.com/checkout-v3/enterprise/features/core/3d-secure-2).
    * @param newMsisdn The new msisdn
    * @returns The payer factory for chaining.
@@ -327,17 +327,30 @@ export default class PayerFactory {
     return this;
   }
 
-  get billingAddress(): BillingAddress | undefined {
+  private _getBillingAddress(clean: boolean): BillingAddress | undefined {
     const mergedBilling = {
-      firstName: this._billingAddress?.firstName || this.firstName,
-      lastName: this._billingAddress?.lastName || this.lastName,
       ...this._billingAddress,
     };
-    return Object.entries(mergedBilling).some(
+    if (clean) {
+      if (!mergedBilling.city || !mergedBilling.zipCode) {
+        delete mergedBilling.city;
+        delete mergedBilling.zipCode;
+        delete mergedBilling.firstName;
+      }
+      if (!mergedBilling.firstName) {
+        delete mergedBilling.firstName;
+        delete mergedBilling.lastName;
+      }
+    }
+    const entries = Object.entries(mergedBilling).filter(
       ([, val]) => typeof val !== 'undefined',
-    )
-      ? mergedBilling
-      : undefined;
+    );
+    if (entries.length === 0) return undefined;
+    return Object.fromEntries(entries) as typeof mergedBilling;
+  }
+
+  get billingAddress(): BillingAddress | undefined {
+    return this._getBillingAddress(false);
   }
 
   /**
@@ -520,13 +533,14 @@ export default class PayerFactory {
       lastName,
       email,
       msisdn,
-      billingAddress,
       shippingAddress,
       payerReference,
       accountInfo,
       nationalIdentifier,
       digitalProducts,
     } = this;
+
+    const billingAddress = this._getBillingAddress(true);
 
     const ret = {
       digitalProducts,
@@ -580,24 +594,42 @@ export default class PayerFactory {
     if (!lastName) {
       errors.push(['lastName', 'Last name is required']);
     }
-    if (!billingAddress) {
-      errors.push(['billingAddress', 'Billing address is required']);
-    } else {
-      const { city, countryCode, streetAddress, zipCode } = billingAddress;
-      if (!city) {
-        errors.push(['billingAddress.city', 'City is required']);
-      }
-      if (!countryCode) {
-        errors.push(['billingAddress.countryCode', 'Country code is required']);
-      }
-      if (!streetAddress) {
+    if (billingAddress) {
+      const {
+        city,
+        zipCode,
+        firstName: firstAddressName,
+        lastName: lastAddressName,
+      } = billingAddress;
+      if (zipCode && !city) {
         errors.push([
-          'billingAddress.streetAddress',
-          'Street address is required',
+          'billingAddress.city',
+          'City is required when zipCode is set',
         ]);
       }
-      if (!zipCode) {
-        errors.push(['billingAddress.zipCode', 'Zip code is required']);
+      if (!zipCode && city) {
+        errors.push([
+          'billingAddress.zipCode',
+          'Zip code is required when city is set',
+        ]);
+      }
+      if ((firstAddressName || lastAddressName) && !zipCode) {
+        errors.push([
+          'billingAddress.zipCode',
+          'Zip code is required when first or last name is set',
+        ]);
+      }
+      if ((firstAddressName || lastAddressName) && !city) {
+        errors.push([
+          'billingAddress.city',
+          'City is required when first or last name is set',
+        ]);
+      }
+      if (lastAddressName && !firstAddressName) {
+        errors.push([
+          'billingAddress.firstName',
+          'First name is required when last name is set',
+        ]);
       }
     }
     if (typeof shippingAddress !== 'undefined') {

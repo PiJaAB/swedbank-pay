@@ -1,7 +1,17 @@
 import SwedbankPayClient from '../SwedbankPayClient';
-import { MaybePopulated } from '../Types';
+import { IntTypeMap, MaybePopulated } from '../Types';
 
 export const resDataKey = Symbol('resData');
+
+type KeyOfAll<T> = T extends any ? keyof T : never;
+
+type Unified<T> = {
+  [Key in KeyOfAll<T>]: T extends any
+    ? Key extends keyof T
+      ? T[Key]
+      : undefined
+    : undefined;
+};
 
 export default abstract class LazyEntity<
   Key extends string | number | symbol,
@@ -10,11 +20,15 @@ export default abstract class LazyEntity<
   readonly [resDataKey]: Key;
   readonly id: string;
   private _inFlight: Promise<ResData> | null = null;
-  readonly client: SwedbankPayClient;
+  readonly client: SwedbankPayClient<keyof IntTypeMap>;
   readonly lastFetched: Date | undefined = undefined;
   private _response: ResData[Key] | undefined;
 
-  constructor(client: SwedbankPayClient, key: Key, id: string) {
+  constructor(
+    client: SwedbankPayClient<keyof IntTypeMap>,
+    key: Key,
+    id: string,
+  ) {
     this.id = id;
     this[resDataKey] = key;
     this.client = client;
@@ -44,6 +58,52 @@ export default abstract class LazyEntity<
       this._inFlight = promise;
     }
     return this._inFlight;
+  }
+
+  async get<Keys extends [KeyOfAll<ResData[Key]>, ...KeyOfAll<ResData[Key]>[]]>(
+    keys: Keys,
+    forceFresh?: boolean,
+  ): Promise<{
+    [K in Keys[number]]-?: Unified<ResData[Key]>[K];
+  }>;
+  async get<K extends keyof Unified<ResData[Key]>>(
+    key: K,
+    forceFresh?: boolean,
+  ): Promise<Unified<ResData[Key]>[K]>;
+  async get(
+    key:
+      | KeyOfAll<ResData[Key]>
+      | [KeyOfAll<ResData[Key]>, ...KeyOfAll<ResData[Key]>[]],
+    forceFresh?: boolean,
+  ) {
+    const allValues = (await this.getAll(forceFresh)) as Unified<ResData[Key]>;
+    if (key instanceof Array) {
+      return Object.fromEntries(
+        key.map((k) => [
+          k,
+          typeof allValues === 'object' && allValues != null
+            ? k in allValues
+              ? allValues[k as keyof typeof allValues]
+              : undefined
+            : undefined,
+        ]),
+      ) as {
+        [key: string]:
+          | Unified<ResData[Key]>[KeyOfAll<ResData[Key]> & string]
+          | undefined;
+        [key: number]:
+          | Unified<ResData[Key]>[KeyOfAll<ResData[Key]> & number]
+          | undefined;
+        [key: symbol]:
+          | Unified<ResData[Key]>[KeyOfAll<ResData[Key]> & symbol]
+          | undefined;
+      };
+    }
+    if (typeof allValues === 'object' && allValues != null) {
+      const ret = allValues[key];
+      return ret;
+    }
+    return undefined;
   }
 
   /**

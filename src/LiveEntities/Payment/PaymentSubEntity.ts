@@ -1,6 +1,6 @@
 import LazyEntity from '../LazyEntity';
 
-export abstract class PaymentEntity<
+export default class PaymentSubEntity<
   Key extends string | number | symbol,
   ResData extends {
     [key in Key]?: {
@@ -22,7 +22,7 @@ export abstract class PaymentEntity<
    * note, paymentOrder is not always available in the response.
    * @returns A promise that resolves to the ID of the parent paymentOrder or null if not available.
    */
-  getPaymentOrderId(): Promise<string | null> {
+  getPaymentId(): Promise<string | null> {
     if (typeof this._paymentId !== 'undefined') {
       return Promise.resolve(this._paymentId);
     }

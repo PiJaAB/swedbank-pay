@@ -1,106 +1,162 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
 import {
+  IntTypeMap,
   PaymentOrderOperation,
   PaymentOrderResponse,
   ResponseEntity,
 } from '../../Types';
-import Aborted from './Aborted';
-import Cancelled from './Cancelled';
-import Failed from './Failed';
-import FailedAttempts from './FailedAttempts';
-import FinancialTransactions from './FinancialTransactions';
-import History from './History';
-import Metadata from './Metadata';
-import OrderItems from './OrderItems';
-import Paid from './Paid';
-import PayeeInfo from './PayeeInfo';
-import Payer from './Payer';
-import Urls from './Urls';
+import { integerMap } from '../../utils/IntegerMap';
+import PaymentOrderSubEntity from './PaymentOrderSubEntity';
 
 const ID_PREFIX = '/psp/paymentorders/';
 
-function paramData(
+type SubEntityKey = {
+  [Key in keyof PaymentOrder<keyof IntTypeMap>]-?: PaymentOrder<
+    keyof IntTypeMap
+  >[Key] extends PaymentOrderSubEntity<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any
+  > | null
+    ? Key
+    : never;
+}[keyof PaymentOrder<keyof IntTypeMap>];
+
+type SimpleAccessKey = {
+  [Key in SubEntityKey]: PaymentOrder<
+    keyof IntTypeMap
+  >[Key] extends PaymentOrderSubEntity<
+    Key,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    any
+  > | null
+    ? Key
+    : never;
+}[SubEntityKey];
+
+type UnionToIntersection<U> = (
+  U extends unknown ? (k: U) => void : never
+) extends (k: infer I) => void
+  ? I
+  : never;
+
+type LastOf<T> = UnionToIntersection<
+  T extends unknown ? () => T : never
+> extends () => infer R
+  ? R
+  : never;
+
+function getInstance<
+  Key extends SimpleAccessKey,
+  IntType extends keyof IntTypeMap,
+>(
+  client: SwedbankPayClient<IntType>,
+  data: PaymentOrderResponse['paymentOrder'],
+  key: Key,
+  existingOrder?: PaymentOrder<IntType>,
+): PaymentOrder<IntType>[Key];
+function getInstance<
+  Key extends SubEntityKey,
+  IntType extends keyof IntTypeMap,
+>(
+  client: SwedbankPayClient<IntType>,
+  data: PaymentOrderResponse['paymentOrder'],
+  key: Key,
+  dataAccessKey: PaymentOrder<IntType>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | PaymentOrderSubEntity<infer AccessKey, any>
+    | undefined
+    | null
+    ? AccessKey
+    : never,
+  existingOrder?: PaymentOrder<IntType>,
+): PaymentOrder<IntType>[Key];
+function getInstance<Key extends SubEntityKey>(
+  client: SwedbankPayClient<keyof IntTypeMap>,
+  data: PaymentOrderResponse['paymentOrder'],
+  key: Key,
+  dataAccessKeyOrExisting:
+    | (PaymentOrder<keyof IntTypeMap>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        | PaymentOrderSubEntity<infer AccessKey, any>
+        | undefined
+        | null
+        ? AccessKey
+        : never)
+    | PaymentOrder<keyof IntTypeMap>
+    | undefined,
+  existingOrder?: PaymentOrder<keyof IntTypeMap>,
+): PaymentOrder<keyof IntTypeMap>[Key] {
+  let dataAccessKey: PaymentOrder<keyof IntTypeMap>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | PaymentOrderSubEntity<infer AccessKey, any>
+    | undefined
+    | null
+    ? AccessKey
+    : never;
+  if (
+    typeof dataAccessKeyOrExisting !== 'object' &&
+    dataAccessKeyOrExisting !== undefined
+  ) {
+    dataAccessKey = dataAccessKeyOrExisting;
+  } else {
+    dataAccessKey = key as string | symbol | number as typeof dataAccessKey;
+  }
+  if (typeof dataAccessKeyOrExisting === 'object') {
+    existingOrder = dataAccessKeyOrExisting;
+  }
+  const existingValue = existingOrder?.[key];
+  const id = data[key]?.id;
+  if (id == null) return null as PaymentOrder<keyof IntTypeMap>[Key];
+  if (id === existingValue?.id) return existingValue;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return new PaymentOrderSubEntity<any, any>(
+    client,
+    dataAccessKey,
+    id,
+  ) as PaymentOrder<keyof IntTypeMap>[Key];
+}
+
+function paramData<IntType extends keyof IntTypeMap>(
   data: PaymentOrderResponse,
-  client: SwedbankPayClient,
-  existing?: PaymentOrder,
+  client: SwedbankPayClient<IntType>,
+  existing?: PaymentOrder<IntType>,
 ) {
-  const { paymentOrder, operations } = data;
+  const { paymentOrder: po, operations } = data;
   return {
-    id: paymentOrder.id,
-    operation: paymentOrder.operation,
-    status: paymentOrder.status,
-    created: new Date(paymentOrder.created),
-    updated: new Date(paymentOrder.updated),
-    amount: paymentOrder.amount,
-    vatAmount: paymentOrder.vatAmount,
-    description: paymentOrder.description,
-    initiatingSystemUserAgent: paymentOrder.initiatingSystemUserAgent,
-    language: paymentOrder.language,
-    availableInstruments: [...paymentOrder.availableInstruments],
-    implementation: paymentOrder.implementation,
-    integration: paymentOrder.integration,
-    instrumentMode: paymentOrder.instrumentMode,
-    guestMode: paymentOrder.guestMode,
-    aborted:
-      !existing || paymentOrder.aborted.id !== existing.aborted.id
-        ? new Aborted(client, paymentOrder.aborted.id)
-        : existing.aborted,
-    cancelled:
-      !existing || paymentOrder.cancelled.id !== existing.cancelled.id
-        ? new Cancelled(client, paymentOrder.cancelled.id)
-        : existing.cancelled,
-    failed:
-      !existing || paymentOrder.failed.id !== existing.failed.id
-        ? new Failed(client, paymentOrder.failed.id)
-        : existing.failed,
-    failedAttempts:
-      !existing || paymentOrder.failedAttempts.id !== existing.failedAttempts.id
-        ? new FailedAttempts(client, paymentOrder.failedAttempts.id)
-        : existing.failedAttempts,
-    financialTransactions:
-      !existing ||
-      paymentOrder.financialTransactions.id !==
-        existing.financialTransactions.id
-        ? new FinancialTransactions(
-            client,
-            paymentOrder.financialTransactions.id,
-          )
-        : existing.financialTransactions,
-    history:
-      !existing || paymentOrder.history.id !== existing.history.id
-        ? new History(client, paymentOrder.history.id)
-        : existing.history,
-    metadata:
-      !existing || paymentOrder.metadata.id !== existing.metadata.id
-        ? new Metadata(client, paymentOrder.metadata.id)
-        : existing.metadata,
-    orderItems:
-      !existing || paymentOrder.orderItems?.id !== existing.orderItems?.id
-        ? (paymentOrder.orderItems &&
-            new OrderItems(client, paymentOrder.orderItems.id)) ??
-          null
-        : existing.orderItems,
-    paid:
-      !existing || paymentOrder.paid.id !== existing.paid.id
-        ? new Paid(client, paymentOrder.paid.id)
-        : existing.paid,
-    payeeInfo:
-      !existing || paymentOrder.payeeInfo.id !== existing.payeeInfo.id
-        ? new PayeeInfo(client, paymentOrder.payeeInfo.id)
-        : existing.payeeInfo,
-    payer:
-      !existing || paymentOrder.payer?.id !== existing.payer?.id
-        ? (paymentOrder.payer && new Payer(client, paymentOrder.payer.id)) ??
-          null
-        : existing.payer,
-    urls:
-      !existing || paymentOrder.urls.id !== existing.urls.id
-        ? new Urls(client, paymentOrder.urls.id)
-        : existing.urls,
-    remainingReversalAmount: paymentOrder.remainingReversalAmount ?? null,
-    remainingCaptureAmount: paymentOrder.remainingCaptureAmount ?? null,
-    remainingCancellationAmount:
-      paymentOrder.remainingCancellationAmount ?? null,
+    id: po.id,
+    operation: po.operation,
+    status: po.status,
+    created: new Date(po.created),
+    updated: new Date(po.updated),
+    amount: po.amount,
+    vatAmount: po.vatAmount,
+    description: po.description,
+    initiatingSystemUserAgent: po.initiatingSystemUserAgent,
+    language: po.language,
+    availableInstruments: [...po.availableInstruments],
+    implementation: po.implementation,
+    integration: po.integration,
+    instrumentMode: po.instrumentMode,
+    guestMode: po.guestMode,
+    aborted: getInstance(client, po, 'aborted', existing),
+    cancelled: getInstance(client, po, 'cancelled', existing),
+    failed: getInstance(client, po, 'failed', existing),
+    failedAttempts: getInstance(client, po, 'failedAttempts', existing),
+    financialTransactions: getInstance(
+      client,
+      po,
+      'financialTransactions',
+      existing,
+    ),
+    history: getInstance(client, po, 'history', existing),
+    metadata: getInstance(client, po, 'metadata', existing),
+    orderItems: getInstance(client, po, 'orderItems', existing),
+    paid: getInstance(client, po, 'paid', existing),
+    payeeInfo: getInstance(client, po, 'payeeInfo', existing),
+    payer: getInstance(client, po, 'payer', existing),
+    urls: getInstance(client, po, 'urls', existing),
+    remainingReversalAmount: po.remainingReversalAmount ?? null,
+    remainingCaptureAmount: po.remainingCaptureAmount ?? null,
+    remainingCancellationAmount: po.remainingCancellationAmount ?? null,
     operations: operations.reduce((acc, cur) => {
       acc[cur.rel] = cur;
       return acc;
@@ -108,7 +164,7 @@ function paramData(
   };
 }
 
-export default class PaymentOrder {
+export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
   readonly id: string;
   readonly operation: PaymentOrderOperation;
   readonly status:
@@ -140,25 +196,52 @@ export default class PaymentOrder {
 
   private _inFlight: Promise<this> | null = null;
 
-  readonly aborted: Aborted;
-  readonly cancelled: Cancelled;
-  readonly failed: Failed;
-  readonly failedAttempts: FailedAttempts;
-  readonly financialTransactions: FinancialTransactions;
-  readonly history: History;
-  readonly metadata: Metadata;
-  readonly orderItems: OrderItems | null;
-  readonly paid: Paid;
-  readonly payeeInfo: PayeeInfo;
-  readonly payer: Payer | null;
-  readonly urls: Urls;
+  readonly aborted: PaymentOrderSubEntity<
+    'aborted',
+    PaymentOrderResponse.Aborted
+  >;
+  readonly cancelled: PaymentOrderSubEntity<
+    'cancelled',
+    PaymentOrderResponse.Cancelled
+  >;
+  readonly failed: PaymentOrderSubEntity<'failed', PaymentOrderResponse.Failed>;
+  readonly failedAttempts: PaymentOrderSubEntity<
+    'failedAttempts',
+    PaymentOrderResponse.FailedAttempts
+  >;
+  readonly financialTransactions: PaymentOrderSubEntity<
+    'financialTransactions',
+    PaymentOrderResponse.FinancialTransactions
+  >;
+  readonly history: PaymentOrderSubEntity<
+    'history',
+    PaymentOrderResponse.History
+  >;
+  readonly metadata: PaymentOrderSubEntity<
+    'metadata',
+    PaymentOrderResponse.Metadata
+  >;
+  readonly orderItems: PaymentOrderSubEntity<
+    'orderItems',
+    PaymentOrderResponse.OrderItems
+  > | null;
+  readonly paid: PaymentOrderSubEntity<'paid', PaymentOrderResponse.Paid>;
+  readonly payeeInfo: PaymentOrderSubEntity<
+    'payeeInfo',
+    PaymentOrderResponse.PayeeInfo
+  >;
+  readonly payer: PaymentOrderSubEntity<
+    'payer',
+    PaymentOrderResponse.Payer
+  > | null;
+  readonly urls: PaymentOrderSubEntity<'urls', PaymentOrderResponse.URLs>;
 
   readonly lastFetched: Date;
 
-  readonly client: SwedbankPayClient;
+  readonly client: SwedbankPayClient<IntTypeName>;
 
   constructor(
-    client: SwedbankPayClient,
+    client: SwedbankPayClient<IntTypeName>,
     options: PaymentOrderResponse,
     fetched: Date,
   ) {
@@ -199,7 +282,10 @@ export default class PaymentOrder {
     this.client = client;
   }
 
-  static async load(client: SwedbankPayClient, id: string) {
+  static async load<IntType extends keyof IntTypeMap>(
+    client: SwedbankPayClient<IntType>,
+    id: string,
+  ) {
     if (!id.startsWith('/')) {
       id = `${ID_PREFIX}${id}`;
     }
@@ -225,13 +311,13 @@ export default class PaymentOrder {
       receiptReference?: string;
     },
     mapper?: (
-      orderItem: ResponseEntity.OrderItemEntity,
+      orderItem: ResponseEntity.OrderItemEntity<IntTypeName>,
       index: number,
-      list: ReadonlyArray<ResponseEntity.OrderItemEntity>,
+      list: ReadonlyArray<ResponseEntity.OrderItemEntity<IntTypeName>>,
     ) =>
-      | ResponseEntity.OrderItemEntity
+      | ResponseEntity.OrderItemEntity<IntTypeName>
       | null
-      | PromiseLike<ResponseEntity.OrderItemEntity | null>,
+      | PromiseLike<ResponseEntity.OrderItemEntity<IntTypeName> | null>,
   ) {
     const captureOperation =
       this.operations.capture ??
@@ -241,12 +327,39 @@ export default class PaymentOrder {
     if (captureOperation == null) {
       throw new Error('No capture operation available');
     }
-    let orderItems = await this.orderItems?.getOrderItemList();
+    let orderItems = await this.orderItems?.get('orderItemList');
     if (orderItems != null && orderItems.length === 0) orderItems = undefined;
     orderItems =
       orderItems && mapper != null
-        ? await Promise.all(orderItems.map(mapper)).then((list) =>
-            list.filter((e): e is ResponseEntity.OrderItemEntity => e != null),
+        ? await Promise.all(
+            (this.client.intType === 'number'
+              ? (orderItems as ResponseEntity.OrderItemEntity<IntTypeName>[])
+              : orderItems.map(
+                  ({
+                    amount,
+                    discountPrice,
+                    quantity,
+                    unitPrice,
+                    vatAmount,
+                    vatPercent,
+                    ...rest
+                  }): ResponseEntity.OrderItemEntity<IntTypeName> => ({
+                    ...rest,
+                    amount: integerMap[this.client.intType](amount),
+                    discountPrice:
+                      integerMap[this.client.intType](discountPrice),
+                    quantity: integerMap[this.client.intType](quantity),
+                    unitPrice: integerMap[this.client.intType](unitPrice),
+                    vatAmount: integerMap[this.client.intType](vatAmount),
+                    vatPercent: integerMap[this.client.intType](vatPercent),
+                  }),
+                )
+            ).map(mapper),
+          ).then((list) =>
+            list.filter(
+              (e): e is ResponseEntity.OrderItemEntity<IntTypeName> =>
+                e != null,
+            ),
           )
         : orderItems;
     let transaction: {
@@ -255,22 +368,32 @@ export default class PaymentOrder {
       vatAmount: number;
       payeeReference: string;
       receiptReference: string | undefined;
-      orderItems?: readonly ResponseEntity.OrderItemEntity[];
+      orderItems?: readonly ResponseEntity.OrderItemEntity<IntTypeName>[];
     };
     if (orderItems != null) {
       if (orderItems.length === 0) {
         throw new Error('Need to include at least one order item if specified');
       }
       const [amount, vatAmount] = orderItems
-        .reduce(
-          (acc: [bigint, bigint], cur) => {
-            acc[0] += BigInt(cur.amount);
-            acc[1] += BigInt(cur.vatAmount);
+        .reduce<[number, number]>(
+          (acc: [number, number], cur) => {
+            acc[0] += integerMap[this.client.intType](
+              cur.amount,
+            ) as typeof acc[0];
+            acc[1] += integerMap[this.client.intType](
+              cur.vatAmount,
+            ) as typeof acc[1];
             return acc;
           },
-          [0n, 0n],
+          [
+            integerMap[this.client.intType](0),
+            integerMap[this.client.intType](0),
+          ] as [number, number],
         )
-        .map((e) => Number(e));
+        .map((e) => Number(e)) as [
+        IntTypeMap[IntTypeName],
+        IntTypeMap[IntTypeName],
+      ];
       transaction = {
         description,
         amount,

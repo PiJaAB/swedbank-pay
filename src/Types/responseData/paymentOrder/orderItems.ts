@@ -3,6 +3,6 @@ import { AsPaymentOrderSubResponse } from './paymentOrderSubResponse';
 
 export type OrderItems = AsPaymentOrderSubResponse<{
   orderItems: {
-    orderItemList: ReadonlyArray<OrderItemEntity>;
+    orderItemList: ReadonlyArray<OrderItemEntity<'number'>>;
   };
 }>;

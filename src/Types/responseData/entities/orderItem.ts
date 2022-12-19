@@ -1,3 +1,5 @@
+import { IntTypeMap } from '../..';
+
 export type OrderItemType =
   | 'PRODUCT'
   | 'SERVICE'
@@ -6,16 +8,16 @@ export type OrderItemType =
   | 'VALUE_CODE'
   | 'OTHER';
 
-export interface OrderItemEntity {
+export interface OrderItemEntity<IntType extends keyof IntTypeMap> {
   reference: string;
   name: string;
   type: OrderItemType;
   class: string;
-  quantity: number;
+  quantity: IntTypeMap[IntType];
   quantityUnit: string;
-  unitPrice: number;
-  discountPrice: number;
-  vatPercent: number;
-  amount: number;
-  vatAmount: number;
+  unitPrice: IntTypeMap[IntType];
+  discountPrice: IntTypeMap[IntType];
+  vatPercent: IntTypeMap[IntType];
+  amount: IntTypeMap[IntType];
+  vatAmount: IntTypeMap[IntType];
 }

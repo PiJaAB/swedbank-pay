@@ -1,3 +1,5 @@
+import { integerMap } from '../utils/IntegerMap';
+
 export * from './responseData';
 export * as requestData from './requestData';
 
@@ -59,4 +61,8 @@ export type Mutable<T> = {
 
 export type RecursiveMutable<T> = {
   -readonly [P in keyof T]: T[P] extends object ? RecursiveMutable<T[P]> : T[P];
+};
+
+export type IntTypeMap = {
+  [Key in keyof typeof integerMap]: ReturnType<typeof integerMap[Key]>;
 };

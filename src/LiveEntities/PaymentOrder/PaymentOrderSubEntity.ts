@@ -1,6 +1,6 @@
 import LazyEntity from '../LazyEntity';
 
-export abstract class PaymentOrderEntity<
+export default class PaymentOrderSubEntity<
   Key extends string | number | symbol,
   ResData extends {
     [key in Key]?: {
