@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import * as LiveEntities from './LiveEntities';
-import { PaymentOrderResponse, CallbackData, IntTypeMap } from './Types';
+import LiveEntities from './LiveEntities';
+import { CallbackData, IntTypeMap } from './Types';
 import * as Factories from './Factories';
 import { integerMap } from './utils/IntegerMap';
 
@@ -12,14 +12,47 @@ export type Options<IntType extends keyof IntTypeMap> = {
   readonly merchantName?: string;
 };
 
-export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
+type BoundConstructor<
+  Ctor extends {
+    new (first: never, ...args: never[]): unknown;
+    load(first: never, ...args: never[]): Promise<unknown>;
+  },
+> = Ctor extends {
+  new (first: never, ...args: infer CArgs): InstanceType<Ctor>;
+  load(first: never, ...args: infer LArgs): Promise<InstanceType<Ctor>>;
+}
+  ? {
+      new (...args: CArgs): InstanceType<Ctor>;
+      load(...args: LArgs): Promise<InstanceType<Ctor>>;
+    }
+  : never;
+
+function bindLiveEntityConstructor<
+  IntTypeName extends keyof IntTypeMap,
+  Ctor extends typeof LiveEntities[keyof typeof LiveEntities],
+>(
+  client: SwedbankPayClient<IntTypeName>,
+  ctor: Ctor,
+): BoundConstructor<
+  Extract<
+    typeof ctor<SwedbankPayClient<IntTypeName>>,
+    { prototype: InstanceType<Ctor> }
+  >
+> {
+  const anyCtor = ctor as any;
+  return Object.assign(anyCtor.bind(null, client), {
+    load: anyCtor.load.bind(anyCtor, client),
+  });
+}
+
+export class SwedbankPayClient<IntTypeName extends keyof IntTypeMap> {
   private static apiUrls = {
     test: 'https://api.externalintegration.payex.com',
     prod: 'https://api.payex.com',
   };
 
   /** Which number type to use for integers */
-  readonly intType: IntType;
+  readonly intType: IntTypeName;
 
   /** Whether we're in production or test mode */
   readonly env: 'test' | 'prod';
@@ -43,7 +76,7 @@ export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
   readonly OrderItemFactory: {
     new (
       options?: Factories.OrderItemFactoryOptions,
-    ): Factories.OrderItemFactory;
+    ): Factories.OrderItemFactory<IntTypeName>;
   };
 
   /** Bound version of the {@link Factories.PayerFactory PayerFactory} class with client constructor argument prepopulated */
@@ -52,14 +85,9 @@ export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
   };
 
   /** Bound version of the {@link LiveEntities.PaymentOrder PaymentOrder} class with client constructor argument prepopulated */
-  readonly PaymentOrder: {
-    new (
-      options: PaymentOrderResponse,
-      fetched: Date,
-    ): LiveEntities.PaymentOrder<IntType>;
-    /** Load a payment order from the backend using a specific ID */
-    load(id: string): Promise<LiveEntities.PaymentOrder<IntType>>;
-  };
+  readonly PaymentOrder: BoundConstructor<
+    typeof LiveEntities.PaymentOrder<SwedbankPayClient<IntTypeName>>
+  >;
 
   /**
    * Creates a new SwedbankPayClient instance.
@@ -74,7 +102,7 @@ export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
     env,
     merchantName,
     integerType,
-  }: Options<IntType>) {
+  }: Options<IntTypeName>) {
     if (integerMap[integerType] === undefined) {
       throw new Error(
         `Invalid number type: ${integerType}, it may not be supported on this platform.`,
@@ -106,24 +134,24 @@ export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
         ...params: ConstructorParameters<
           typeof LiveEntities.PaymentOrder
         > extends [SwedbankPayClient<keyof IntTypeMap>, ...infer Rest]
-          ? [client: SwedbankPayClient<IntType>, ...rest: Rest]
+          ? [client: SwedbankPayClient<IntTypeName>, ...rest: Rest]
           : never
-      ): LiveEntities.PaymentOrder<IntType>;
+      ): LiveEntities.PaymentOrder<IntTypeName>;
       load(
         ...params: Parameters<
           typeof LiveEntities.PaymentOrder['load']
         > extends [SwedbankPayClient<keyof IntTypeMap>, ...infer Rest]
-          ? [client: SwedbankPayClient<IntType>, ...rest: Rest]
+          ? [client: SwedbankPayClient<IntTypeName>, ...rest: Rest]
           : never
-      ): Promise<LiveEntities.PaymentOrder<IntType>>;
+      ): Promise<LiveEntities.PaymentOrder<IntTypeName>>;
     };
     this.PaymentOrder = Object.assign(TypedPaymentOrder.bind(null, this), {
       load: TypedPaymentOrder.load.bind(LiveEntities.PaymentOrder, this),
     });
   }
 
-  asNumType(num: IntTypeMap[keyof IntTypeMap]): IntTypeMap[IntType] {
-    return integerMap[this.intType](num) as IntTypeMap[IntType];
+  asIntType(num: IntTypeMap[keyof IntTypeMap]): NumberType<this> {
+    return integerMap[this.intType](num) as NumberType<this>;
   }
 
   /**
@@ -133,7 +161,7 @@ export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
    * @returns the resolved objects, or null if not provided
    */
   async resolveCallback(data: CallbackData): Promise<{
-    paymentOrder: LiveEntities.PaymentOrder<IntType> | null;
+    paymentOrder: LiveEntities.PaymentOrder<IntTypeName> | null;
   }> {
     const {
       paymentOrder: rawPaymentOrder,
@@ -154,5 +182,22 @@ export class SwedbankPayClient<IntType extends keyof IntTypeMap> {
     return this._merchantName;
   }
 }
+
+type UnionToIntersection<Union> = (
+  Union extends unknown ? (o: Union) => void : never
+) extends (o: infer Q) => void
+  ? Q
+  : never;
+
+export type IntersectionNumberType<
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+> = Client extends SwedbankPayClient<infer IntTypeName>
+  ? UnionToIntersection<IntTypeMap[IntTypeName]>
+  : never;
+
+export type NumberType<Client extends SwedbankPayClient<keyof IntTypeMap>> =
+  Client extends SwedbankPayClient<infer IntTypeName>
+    ? UnionToIntersection<IntTypeMap[IntTypeName]>
+    : never;
 
 export default SwedbankPayClient;

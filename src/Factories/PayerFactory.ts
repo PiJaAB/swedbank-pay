@@ -1,4 +1,4 @@
-import type { Mutable, requestData } from '../Types';
+import type { IntTypeMap, Mutable, requestData } from '../Types';
 import SwedbankPayClient from '../SwedbankPayClient';
 import { ObjectEntries, ObjectFromEntries } from '../utils/ObjectEntries';
 
@@ -210,7 +210,9 @@ function parseAccountInfoValue(
   );
 }
 
-export default class PayerFactory {
+export default class PayerFactory<
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+> {
   private _firstName: string | undefined;
   private _lastName: string | undefined;
   private _digitalProducts: boolean | undefined;
@@ -228,11 +230,11 @@ export default class PayerFactory {
       | NonNullable<requestData.Payer['accountInfo']>[key];
   };
 
-  readonly client: SwedbankPayClient;
+  readonly client: Client;
 
-  constructor(client: SwedbankPayClient, options?: PayerFactoryOptions);
+  constructor(client: Client, options?: PayerFactoryOptions);
   constructor(
-    client: SwedbankPayClient,
+    client: Client,
     {
       firstName,
       lastName,

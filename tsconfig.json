@@ -12,6 +12,7 @@
     "target": "es2020",
     "preserveWatchOutput": true,
     "resolveJsonModule": true,
+    "noErrorTruncation": true,
   },
   "compileOnSave": true,
   "include": [

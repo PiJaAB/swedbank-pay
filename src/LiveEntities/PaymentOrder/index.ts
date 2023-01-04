@@ -1,18 +1,17 @@
-import SwedbankPayClient from '../../SwedbankPayClient';
+import SwedbankPayClient, { NumberType } from '../../SwedbankPayClient';
 import {
   IntTypeMap,
   PaymentOrderOperation,
   PaymentOrderResponse,
   ResponseEntity,
 } from '../../Types';
-import { integerMap } from '../../utils/IntegerMap';
 import PaymentOrderSubEntity from './PaymentOrderSubEntity';
 
 const ID_PREFIX = '/psp/paymentorders/';
 
 type SubEntityKey = {
-  [Key in keyof PaymentOrder<keyof IntTypeMap>]-?: PaymentOrder<
-    keyof IntTypeMap
+  [Key in keyof PaymentOrder<SwedbankPayClient<never>>]-?: PaymentOrder<
+    SwedbankPayClient<never>
   >[Key] extends PaymentOrderSubEntity<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any,
@@ -21,11 +20,11 @@ type SubEntityKey = {
   > | null
     ? Key
     : never;
-}[keyof PaymentOrder<keyof IntTypeMap>];
+}[keyof PaymentOrder<SwedbankPayClient<never>>];
 
 type SimpleAccessKey = {
   [Key in SubEntityKey]: PaymentOrder<
-    keyof IntTypeMap
+    SwedbankPayClient<never>
   >[Key] extends PaymentOrderSubEntity<
     Key,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,58 +34,46 @@ type SimpleAccessKey = {
     : never;
 }[SubEntityKey];
 
-type UnionToIntersection<U> = (
-  U extends unknown ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
-
-type LastOf<T> = UnionToIntersection<
-  T extends unknown ? () => T : never
-> extends () => infer R
-  ? R
-  : never;
-
 function getInstance<
   Key extends SimpleAccessKey,
-  IntType extends keyof IntTypeMap,
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
 >(
-  client: SwedbankPayClient<IntType>,
+  client: Client,
   data: PaymentOrderResponse['paymentOrder'],
   key: Key,
-  existingOrder?: PaymentOrder<IntType>,
-): PaymentOrder<IntType>[Key];
+  existingOrder?: PaymentOrder<Client>,
+): PaymentOrder<Client>[Key];
 function getInstance<
   Key extends SubEntityKey,
-  IntType extends keyof IntTypeMap,
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
 >(
-  client: SwedbankPayClient<IntType>,
+  client: Client,
   data: PaymentOrderResponse['paymentOrder'],
   key: Key,
-  dataAccessKey: PaymentOrder<IntType>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dataAccessKey: PaymentOrder<Client>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | PaymentOrderSubEntity<infer AccessKey, any>
     | undefined
     | null
     ? AccessKey
     : never,
-  existingOrder?: PaymentOrder<IntType>,
-): PaymentOrder<IntType>[Key];
+  existingOrder?: PaymentOrder<Client>,
+): PaymentOrder<Client>[Key];
 function getInstance<Key extends SubEntityKey>(
-  client: SwedbankPayClient<keyof IntTypeMap>,
+  client: SwedbankPayClient<never>,
   data: PaymentOrderResponse['paymentOrder'],
   key: Key,
   dataAccessKeyOrExisting:
-    | (PaymentOrder<keyof IntTypeMap>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | (PaymentOrder<SwedbankPayClient<never>>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | PaymentOrderSubEntity<infer AccessKey, any>
         | undefined
         | null
         ? AccessKey
         : never)
-    | PaymentOrder<keyof IntTypeMap>
+    | PaymentOrder<SwedbankPayClient<never>>
     | undefined,
-  existingOrder?: PaymentOrder<keyof IntTypeMap>,
-): PaymentOrder<keyof IntTypeMap>[Key] {
-  let dataAccessKey: PaymentOrder<keyof IntTypeMap>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  existingOrder?: PaymentOrder<SwedbankPayClient<never>>,
+): PaymentOrder<SwedbankPayClient<never>>[Key] {
+  let dataAccessKey: PaymentOrder<SwedbankPayClient<never>>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | PaymentOrderSubEntity<infer AccessKey, any>
     | undefined
     | null
@@ -105,20 +92,20 @@ function getInstance<Key extends SubEntityKey>(
   }
   const existingValue = existingOrder?.[key];
   const id = data[key]?.id;
-  if (id == null) return null as PaymentOrder<keyof IntTypeMap>[Key];
+  if (id == null) return null as PaymentOrder<SwedbankPayClient<never>>[Key];
   if (id === existingValue?.id) return existingValue;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return new PaymentOrderSubEntity<any, any>(
     client,
     dataAccessKey,
     id,
-  ) as PaymentOrder<keyof IntTypeMap>[Key];
+  ) as PaymentOrder<SwedbankPayClient<never>>[Key];
 }
 
-function paramData<IntType extends keyof IntTypeMap>(
+function paramData<Client extends SwedbankPayClient<keyof IntTypeMap>>(
   data: PaymentOrderResponse,
-  client: SwedbankPayClient<IntType>,
-  existing?: PaymentOrder<IntType>,
+  client: Client,
+  existing?: PaymentOrder<Client>,
 ) {
   const { paymentOrder: po, operations } = data;
   return {
@@ -127,8 +114,8 @@ function paramData<IntType extends keyof IntTypeMap>(
     status: po.status,
     created: new Date(po.created),
     updated: new Date(po.updated),
-    amount: po.amount,
-    vatAmount: po.vatAmount,
+    amount: client.asIntType(po.amount),
+    vatAmount: client.asIntType(po.vatAmount),
     description: po.description,
     initiatingSystemUserAgent: po.initiatingSystemUserAgent,
     language: po.language,
@@ -154,9 +141,11 @@ function paramData<IntType extends keyof IntTypeMap>(
     payeeInfo: getInstance(client, po, 'payeeInfo', existing),
     payer: getInstance(client, po, 'payer', existing),
     urls: getInstance(client, po, 'urls', existing),
-    remainingReversalAmount: po.remainingReversalAmount ?? null,
-    remainingCaptureAmount: po.remainingCaptureAmount ?? null,
-    remainingCancellationAmount: po.remainingCancellationAmount ?? null,
+    remainingReversalAmount:
+      client.asIntType(po.remainingReversalAmount) ?? null,
+    remainingCaptureAmount: client.asIntType(po.remainingCaptureAmount) ?? null,
+    remainingCancellationAmount:
+      client.asIntType(po.remainingCancellationAmount) ?? null,
     operations: operations.reduce((acc, cur) => {
       acc[cur.rel] = cur;
       return acc;
@@ -164,7 +153,9 @@ function paramData<IntType extends keyof IntTypeMap>(
   };
 }
 
-export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
+export default class PaymentOrder<
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+> {
   readonly id: string;
   readonly operation: PaymentOrderOperation;
   readonly status:
@@ -176,8 +167,8 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
     | 'Aborted';
   readonly created: Date;
   readonly updated: Date;
-  readonly amount: number;
-  readonly vatAmount: number;
+  readonly amount: NumberType<Client>;
+  readonly vatAmount: NumberType<Client>;
   readonly description: string;
   readonly initiatingSystemUserAgent: string;
   readonly language: string;
@@ -186,9 +177,9 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
   readonly integration: string;
   readonly instrumentMode: boolean;
   readonly guestMode: boolean;
-  readonly remainingReversalAmount: number | null;
-  readonly remainingCaptureAmount: number | null;
-  readonly remainingCancellationAmount: number | null;
+  readonly remainingReversalAmount: NumberType<Client> | null;
+  readonly remainingCaptureAmount: NumberType<Client> | null;
+  readonly remainingCancellationAmount: NumberType<Client> | null;
 
   readonly operations: {
     [key: string]: ResponseEntity.OperationEntity | undefined;
@@ -238,13 +229,9 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
 
   readonly lastFetched: Date;
 
-  readonly client: SwedbankPayClient<IntTypeName>;
+  readonly client: Client;
 
-  constructor(
-    client: SwedbankPayClient<IntTypeName>,
-    options: PaymentOrderResponse,
-    fetched: Date,
-  ) {
+  constructor(client: Client, options: PaymentOrderResponse, fetched: Date) {
     const data = paramData(options, client);
     this.id = data.id;
     this.operation = data.operation;
@@ -300,6 +287,27 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
     return this.status === 'Paid' && !this.remainingCaptureAmount;
   }
 
+  /**
+   * Private function to unionize the number types.
+   * It actually ensures the type from client, but we type it
+   * as bigint to make it possible to use numerical operators.
+   *
+   * @param num The number to convert to the type configured by the client
+   * @returns The number, in the type configured by the client, but typed as bigint from typescirpt
+   * @private
+   */
+  private toNum(num: IntTypeMap[keyof IntTypeMap]): bigint;
+  private toNum(num: IntTypeMap[keyof IntTypeMap] | null): bigint | null;
+  private toNum(
+    num: IntTypeMap[keyof IntTypeMap] | undefined,
+  ): bigint | undefined;
+  private toNum(
+    num: IntTypeMap[keyof IntTypeMap] | null | undefined,
+  ): bigint | null | undefined;
+  private toNum(num: IntTypeMap[keyof IntTypeMap] | null | undefined) {
+    return this.toNum(num) as bigint;
+  }
+
   async capture(
     {
       description,
@@ -311,13 +319,13 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
       receiptReference?: string;
     },
     mapper?: (
-      orderItem: ResponseEntity.OrderItemEntity<IntTypeName>,
+      orderItem: ResponseEntity.OrderItemEntity,
       index: number,
-      list: ReadonlyArray<ResponseEntity.OrderItemEntity<IntTypeName>>,
+      list: ReadonlyArray<ResponseEntity.OrderItemEntity>,
     ) =>
-      | ResponseEntity.OrderItemEntity<IntTypeName>
+      | ResponseEntity.OrderItemEntity
       | null
-      | PromiseLike<ResponseEntity.OrderItemEntity<IntTypeName> | null>,
+      | PromiseLike<ResponseEntity.OrderItemEntity | null>,
   ) {
     const captureOperation =
       this.operations.capture ??
@@ -331,35 +339,8 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
     if (orderItems != null && orderItems.length === 0) orderItems = undefined;
     orderItems =
       orderItems && mapper != null
-        ? await Promise.all(
-            (this.client.intType === 'number'
-              ? (orderItems as ResponseEntity.OrderItemEntity<IntTypeName>[])
-              : orderItems.map(
-                  ({
-                    amount,
-                    discountPrice,
-                    quantity,
-                    unitPrice,
-                    vatAmount,
-                    vatPercent,
-                    ...rest
-                  }): ResponseEntity.OrderItemEntity<IntTypeName> => ({
-                    ...rest,
-                    amount: integerMap[this.client.intType](amount),
-                    discountPrice:
-                      integerMap[this.client.intType](discountPrice),
-                    quantity: integerMap[this.client.intType](quantity),
-                    unitPrice: integerMap[this.client.intType](unitPrice),
-                    vatAmount: integerMap[this.client.intType](vatAmount),
-                    vatPercent: integerMap[this.client.intType](vatPercent),
-                  }),
-                )
-            ).map(mapper),
-          ).then((list) =>
-            list.filter(
-              (e): e is ResponseEntity.OrderItemEntity<IntTypeName> =>
-                e != null,
-            ),
+        ? await Promise.all(orderItems.map(mapper)).then((list) =>
+            list.filter((e): e is ResponseEntity.OrderItemEntity => e != null),
           )
         : orderItems;
     let transaction: {
@@ -368,32 +349,20 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
       vatAmount: number;
       payeeReference: string;
       receiptReference: string | undefined;
-      orderItems?: readonly ResponseEntity.OrderItemEntity<IntTypeName>[];
+      orderItems?: readonly ResponseEntity.OrderItemEntity[];
     };
     if (orderItems != null) {
       if (orderItems.length === 0) {
         throw new Error('Need to include at least one order item if specified');
       }
-      const [amount, vatAmount] = orderItems
-        .reduce<[number, number]>(
-          (acc: [number, number], cur) => {
-            acc[0] += integerMap[this.client.intType](
-              cur.amount,
-            ) as typeof acc[0];
-            acc[1] += integerMap[this.client.intType](
-              cur.vatAmount,
-            ) as typeof acc[1];
-            return acc;
-          },
-          [
-            integerMap[this.client.intType](0),
-            integerMap[this.client.intType](0),
-          ] as [number, number],
-        )
-        .map((e) => Number(e)) as [
-        IntTypeMap[IntTypeName],
-        IntTypeMap[IntTypeName],
-      ];
+      const [amount, vatAmount] = orderItems.reduce<[number, number]>(
+        (acc: [number, number], cur) => {
+          acc[0] += cur.amount;
+          acc[1] += cur.vatAmount;
+          return acc;
+        },
+        [0, 0],
+      );
       transaction = {
         description,
         amount,
@@ -403,16 +372,20 @@ export default class PaymentOrder<IntTypeName extends keyof IntTypeMap> {
         orderItems,
       };
     } else {
-      const amount = this.remainingCaptureAmount ?? this.amount;
-      const alreadyCapturedAmount = this.amount - amount;
+      const amount = this.toNum(this.remainingCaptureAmount ?? this.amount);
+      const alreadyCapturedAmount = this.toNum(this.amount - amount);
       const vatAmount =
-        alreadyCapturedAmount === 0
-          ? this.vatAmount
-          : Math.round(amount * (this.vatAmount / this.amount));
+        alreadyCapturedAmount === this.toNum(0)
+          ? this.toNum(this.vatAmount)
+          : amount * (this.toNum(this.vatAmount) / this.toNum(this.amount));
       transaction = {
         description,
-        amount,
-        vatAmount,
+        amount:
+          typeof amount === 'number' ? Math.round(amount) : Number(amount),
+        vatAmount:
+          typeof vatAmount === 'number'
+            ? Math.round(vatAmount)
+            : Number(vatAmount),
         payeeReference,
         receiptReference,
       };

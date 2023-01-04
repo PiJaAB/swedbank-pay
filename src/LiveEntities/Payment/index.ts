@@ -1,4 +1,4 @@
-import SwedbankPayClient from '../../SwedbankPayClient';
+import SwedbankPayClient, { NumberType } from '../../SwedbankPayClient';
 import {
   IntTypeMap,
   PaymentOrderOperation,
@@ -9,8 +9,8 @@ import { ResponseEntity } from '../../Types/responseData';
 import PaymentSubEntity from './PaymentSubEntity';
 
 type SubEntityKey = {
-  [Key in keyof Payment<keyof IntTypeMap>]-?: Payment<
-    keyof IntTypeMap
+  [Key in keyof Payment<SwedbankPayClient<never>>]-?: Payment<
+    SwedbankPayClient<never>
   >[Key] extends PaymentSubEntity<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     any,
@@ -19,11 +19,12 @@ type SubEntityKey = {
   > | null
     ? Key
     : never;
-}[keyof Payment<keyof IntTypeMap>];
+}[keyof Payment<SwedbankPayClient<never>>] &
+  keyof ResponseEntity.PaymentEntity;
 
 type SimpleAccessKey = {
   [Key in SubEntityKey]: Payment<
-    keyof IntTypeMap
+    SwedbankPayClient<never>
   >[Key] extends PaymentSubEntity<
     Key,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,40 +34,46 @@ type SimpleAccessKey = {
     : never;
 }[SubEntityKey];
 
-function getInstance<Key extends SimpleAccessKey>(
-  client: SwedbankPayClient<keyof IntTypeMap>,
+function getInstance<
+  Key extends SimpleAccessKey,
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+>(
+  client: Client,
   data: PaymentResponse['payment'],
   key: Key,
-  existingOrder?: Payment,
-): Payment[Key];
-function getInstance<Key extends SubEntityKey>(
-  client: SwedbankPayClient<keyof IntTypeMap>,
+  existingOrder?: Payment<Client>,
+): Payment<Client>[Key];
+function getInstance<
+  Key extends SubEntityKey,
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+>(
+  client: Client,
   data: PaymentResponse['payment'],
   key: Key,
-  dataAccessKey: Payment[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dataAccessKey: Payment<Client>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | PaymentSubEntity<infer AccessKey, any>
     | undefined
     | null
     ? AccessKey
     : never,
-  existingOrder?: Payment,
-): Payment[Key];
+  existingOrder?: Payment<Client>,
+): Payment<Client>[Key];
 function getInstance<Key extends SubEntityKey>(
-  client: SwedbankPayClient<keyof IntTypeMap>,
+  client: SwedbankPayClient<never>,
   data: PaymentResponse['payment'],
   key: Key,
   dataAccessKeyOrExisting:
-    | (Payment[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | (Payment<SwedbankPayClient<never>>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
         | PaymentSubEntity<infer AccessKey, any>
         | undefined
         | null
         ? AccessKey
         : never)
-    | Payment
+    | Payment<SwedbankPayClient<never>>
     | undefined,
-  existingOrder?: Payment,
-): Payment[Key] {
-  let dataAccessKey: Payment[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  existingOrder?: Payment<SwedbankPayClient<never>>,
+): Payment<SwedbankPayClient<never>>[Key] {
+  let dataAccessKey: Payment<SwedbankPayClient<never>>[Key] extends  // eslint-disable-next-line @typescript-eslint/no-explicit-any
     | PaymentSubEntity<infer AccessKey, any>
     | undefined
     | null
@@ -85,20 +92,18 @@ function getInstance<Key extends SubEntityKey>(
   }
   const existingValue = existingOrder?.[key];
   const id = data[key]?.id;
-  if (id == null) return null as Payment[Key];
+  if (id == null) return null as Payment<SwedbankPayClient<never>>[Key];
   if (id === existingValue?.id) return existingValue;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return new PaymentSubEntity<any, any>(
-    client,
-    dataAccessKey,
-    id,
-  ) as Payment[Key];
+  return new PaymentSubEntity<any, any>(client, dataAccessKey, id) as Payment<
+    SwedbankPayClient<never>
+  >[Key];
 }
 
-function paramData<NumberType extends keyof IntTypeMap>(
+function paramData<Client extends SwedbankPayClient<keyof IntTypeMap>>(
   data: PaymentResponse,
-  client: SwedbankPayClient<NumberType>,
-  existing?: Payment,
+  client: Client,
+  existing?: Payment<Client>,
 ) {
   const { payment, operations } = data;
   return {
@@ -139,7 +144,9 @@ function paramData<NumberType extends keyof IntTypeMap>(
   };
 }
 
-export default class Paymen0t<IntType extends keyof IntTypeMap> {
+export default class Payment<
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+> {
   readonly id: string;
   readonly number: number;
   readonly created: Date;
@@ -148,11 +155,11 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
   readonly state: PaymentState;
   readonly operation: PaymentOrderOperation | null;
   readonly currency: string;
-  readonly amount: number;
-  readonly vatAmount: number | null;
-  readonly remainingReversalAmount: number | null;
-  readonly remainingCaptureAmount: number | null;
-  readonly remainingCancellationAmount: number | null;
+  readonly amount: NumberType<Client>;
+  readonly vatAmount: NumberType<Client> | null;
+  readonly remainingReversalAmount: NumberType<Client> | null;
+  readonly remainingCaptureAmount: NumberType<Client> | null;
+  readonly remainingCancellationAmount: NumberType<Client> | null;
   readonly description: string;
   readonly payerReference: string | null;
   readonly initiatingSystemUserAgent: string;
@@ -198,13 +205,9 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
 
   readonly lastFetched: Date;
 
-  readonly client: SwedbankPayClient;
+  readonly client: Client;
 
-  constructor(
-    client: SwedbankPayClient,
-    options: PaymentResponse,
-    fetched: Date,
-  ) {
+  constructor(client: Client, options: PaymentResponse, fetched: Date) {
     const data = paramData(options, client);
     this.id = data.id;
     this.number = data.number;
@@ -214,11 +217,15 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
     this.state = data.state;
     this.operation = data.operation;
     this.currency = data.currency;
-    this.amount = data.amount;
-    this.vatAmount = data.vatAmount;
-    this.remainingReversalAmount = data.remainingReversalAmount;
-    this.remainingCaptureAmount = data.remainingCaptureAmount;
-    this.remainingCancellationAmount = data.remainingCancellationAmount;
+    this.amount = client.asIntType(data.amount);
+    this.vatAmount = client.asIntType(data.vatAmount);
+    this.remainingReversalAmount = client.asIntType(
+      data.remainingReversalAmount,
+    );
+    this.remainingCaptureAmount = client.asIntType(data.remainingCaptureAmount);
+    this.remainingCancellationAmount = client.asIntType(
+      data.remainingCancellationAmount,
+    );
     this.description = data.description;
     this.payerReference = data.payerReference;
     this.initiatingSystemUserAgent = data.initiatingSystemUserAgent;
@@ -244,7 +251,10 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
     this.client = client;
   }
 
-  static async load(client: SwedbankPayClient, id: string) {
+  static async load<Client extends SwedbankPayClient<never>>(
+    client: Client,
+    id: string,
+  ) {
     if (!id.startsWith('/')) {
       id = `/${id}`;
     }
@@ -255,25 +265,61 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
   /**
    * Get the amount that has been captured.
    */
-  async getCapturedAmount(): Promise<number>;
-  async getCapturedAmount(
-    detailedObject: true,
-  ): Promise<{ amount: number; vatAmaunt: number }>;
-  async getCapturedAmount(
-    detailedObject?: boolean,
-  ): Promise<{ amount: number; vatAmount: number } | number>;
+  async getCapturedAmount(): Promise<NumberType<Client>>;
+  async getCapturedAmount(detailedObject: true): Promise<{
+    amount: NumberType<Client>;
+    vatAmount: NumberType<Client>;
+  }>;
+  async getCapturedAmount(detailedObject?: boolean): Promise<
+    | {
+        amount: NumberType<Client>;
+        vatAmount: NumberType<Client>;
+      }
+    | NumberType<Client>
+  >;
   async getCapturedAmount(detailedObject?: boolean) {
     const transactionList = await this.transactions?.get('transactionList');
+    if (detailedObject) {
+      if (!transactionList) {
+        return {
+          amount: this.toNum(0) as NumberType<Client>,
+          vatAmount: this.toNum(0) as NumberType<Client>,
+        };
+      }
+      const retVal = transactionList.reduce(
+        (
+          acc: {
+            amount: bigint;
+            vatAmount: bigint;
+          },
+          cur,
+        ) => {
+          if (cur.type === 'Capture' && cur.state === 'Completed') {
+            acc.amount += this.toNum(cur.amount);
+            acc.vatAmount += this.toNum(cur.vatAmount);
+          }
+          return acc;
+        },
+        {
+          amount: this.toNum(0),
+          vatAmount: this.toNum(0),
+        },
+      ) as {
+        amount: NumberType<Client>;
+        vatAmount: NumberType<Client>;
+      };
+      return retVal;
+    }
     if (!transactionList) {
-      return 0;
+      return this.toNum(0);
     }
     const capturedAmount = transactionList.reduce(
-      (acc, cur) =>
+      (acc: bigint, cur) =>
         cur.type === 'Capture' && cur.state === 'Completed'
-          ? acc + cur.amount
+          ? acc + this.toNum(cur.amount)
           : acc,
-      0,
-    );
+      this.toNum(0),
+    ) as NumberType<Client>;
 
     return capturedAmount;
   }
@@ -313,6 +359,27 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
     return reversedAmount >= this.amount;
   }
 
+  /**
+   * Private function to unionize the number types.
+   * It actually ensures the type from client, but we type it
+   * as bigint to make it possible to use numerical operators.
+   *
+   * @param num The number to convert to the type configured by the client
+   * @returns The number, in the type configured by the client, but typed as bigint from typescirpt
+   * @private
+   */
+  private toNum(num: IntTypeMap[keyof IntTypeMap]): bigint;
+  private toNum(num: IntTypeMap[keyof IntTypeMap] | null): bigint | null;
+  private toNum(
+    num: IntTypeMap[keyof IntTypeMap] | undefined,
+  ): bigint | undefined;
+  private toNum(
+    num: IntTypeMap[keyof IntTypeMap] | null | undefined,
+  ): bigint | null | undefined;
+  private toNum(num: IntTypeMap[keyof IntTypeMap] | null | undefined) {
+    return this.toNum(num) as bigint;
+  }
+
   async capture({
     description,
     payeeReference,
@@ -334,18 +401,37 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
     if (captureOperation == null) {
       throw new Error('No capture operation available');
     }
-    const maxCapture = this.remainingCaptureAmount ?? this.amount;
-    const amountToCapture = amount ?? maxCapture;
-    const alreadyCapturedAmount = vatAmount ?? this.amount - maxCapture;
-    const vatAmountToCapture =
-      vatAmount ??
-      (alreadyCapturedAmount === 0
-        ? this.vatAmount
-        : Math.round(amountToCapture * (this.vatAmount / this.amount)));
+    const maxCapture = this.toNum(this.remainingCaptureAmount ?? this.amount);
+    const amountToCapture = amount != null ? this.toNum(amount) : maxCapture;
+
+    let vatAmountToCapture = this.toNum(vatAmount);
+    if (vatAmountToCapture == null) {
+      const { vatAmount: alreadyCapturedVatAmount } =
+        (await this.getCapturedAmount(true)) as {
+          amount: bigint;
+          vatAmount: bigint;
+        };
+      if (alreadyCapturedVatAmount === this.toNum(0)) {
+        vatAmountToCapture = this.toNum(this.vatAmount ?? 0);
+      } else {
+        vatAmountToCapture =
+          this.toNum(this.vatAmount ?? 0) - alreadyCapturedVatAmount;
+      }
+      if (maxCapture !== amountToCapture) {
+        vatAmountToCapture =
+          (vatAmountToCapture * amountToCapture) / maxCapture;
+      }
+    }
     const transaction = {
       description,
-      amount,
-      vatAmount,
+      amount:
+        typeof amountToCapture === 'number'
+          ? Math.round(amountToCapture)
+          : Number(amountToCapture),
+      vatAmount:
+        typeof vatAmountToCapture === 'number'
+          ? Math.round(vatAmountToCapture)
+          : Number(vatAmountToCapture),
       payeeReference,
       receiptReference,
     };
@@ -448,17 +534,5 @@ export default class Paymen0t<IntType extends keyof IntTypeMap> {
       this._inFlight = promise;
     }
     return this._inFlight;
-  }
-
-  /**
-   * Due to an oddity in the SwedbankPay API, this getter is required to
-   * deduce whether the payment is already aborted by checking for the
-   * presence of the `abort´ operation.
-   */
-  get isAborted() {
-    return (
-      this.status === 'Aborted' ||
-      (this.operations.abort == null && this.status === 'Initialized')
-    );
   }
 }

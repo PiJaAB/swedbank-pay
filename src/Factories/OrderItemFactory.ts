@@ -1,5 +1,5 @@
 import type { IntTypeMap, OrderItemType } from '../Types';
-import SwedbankPayClient from '../SwedbankPayClient';
+import SwedbankPayClient, { NumberType } from '../SwedbankPayClient';
 
 export type OrderItemFactoryOptions = {
   /** The name of the order item. */
@@ -20,16 +20,21 @@ export type OrderItemFactoryOptions = {
 };
 
 // According to the docs: The percent value of the VAT multiplied by 100, so `25%` becomes `2500`.
-const VAT_RATE_SCALE = 100n;
+const VAT_RATE_SCALE = 100;
 
 // The 4 decimal precision quantity of order items being purchased.
-export const QUANTITY_PRECISION = 10000n;
+export const QUANTITY_PRECISION = 10000;
 
-export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
-  private _vatPercent: IntTypeMap[IntTypeName] | undefined;
-  private _unitPrice: IntTypeMap[IntTypeName] | undefined;
+export default class OrderItemFactory<
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+> {
+  private _vatPercent: NumberType<Client> | undefined;
+  private _unitPrice: NumberType<Client> | undefined;
 
-  private _quantity: number;
+  private QUANTITY_PRECISION: NumberType<Client>;
+  private VAT_RATE_SCALE: NumberType<Client>;
+
+  private _quantity: NumberType<Client>;
 
   private _class: string | undefined;
   private _name: string | undefined;
@@ -39,14 +44,11 @@ export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
 
   private _type: OrderItemType | undefined;
 
-  readonly client: SwedbankPayClient<IntTypeName>;
+  readonly client: Client;
 
+  constructor(client: Client, options?: OrderItemFactoryOptions);
   constructor(
-    client: SwedbankPayClient<IntTypeName>,
-    options?: OrderItemFactoryOptions,
-  );
-  constructor(
-    client: SwedbankPayClient<IntTypeName>,
+    client: Client,
     {
       name,
       type,
@@ -60,30 +62,31 @@ export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
     }: OrderItemFactoryOptions = {},
   ) {
     this.client = client;
-    const bigIntUnitPrice = ;
-    this._vatPercent = vatPercent != null ? client.asNumType(vatPercent) : undefined;
-    this._unitPrice = unitPrice != null ? client.asNumType(unitPrice) : undefined;
+    this.QUANTITY_PRECISION = client.asIntType(QUANTITY_PRECISION);
+    this.VAT_RATE_SCALE = client.asIntType(VAT_RATE_SCALE);
+    this._vatPercent = client.asIntType(vatPercent);
+    this._unitPrice = client.asIntType(unitPrice);
     this._name = name;
     this._class = className;
     this._type = type;
-    this._quantity = quantity;
+    this._quantity = client.asIntType(quantity);
     this._quantityUnit = quantityUnit;
     this._displayQuantityUnit = displayQuantityUnit;
     this._reference = reference;
   }
 
   /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
-  get unitPrice(): IntTypeMap[IntTypeName] | undefined {
+  get unitPrice(): NumberType<Client> | undefined {
     return this._unitPrice;
   }
 
   /** The price per unit of order item (including VAT, if any) entered in the lowest monetary unit of the selected currency. E.g.: `10000` = `100.00` SEK, `5000` = `50.00` SEK */
   setUnitPrice(
-    newUnitPrice: IntTypeMap[IntTypeName],
-    vatPercent?: IntTypeMap[IntTypeName],
+    newUnitPrice: NumberType<Client>,
+    vatPercent?: NumberType<Client>,
   ): void {
     if (vatPercent != null) this._vatPercent = vatPercent;
-    this._unitPrice = newUnitPrice;;
+    this._unitPrice = newUnitPrice;
   }
 
   /**
@@ -96,17 +99,18 @@ export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
     if (vatPercent == null || amount == null) return undefined;
     return (
       amount -
-      (amount * (VAT_RATE_SCALE * 100n)) / (VAT_RATE_SCALE * 100n + vatPercent)
+      (amount * (this.VAT_RATE_SCALE * this.client.asIntType(100))) /
+        (this.VAT_RATE_SCALE * this.client.asIntType(100) + vatPercent)
     );
   }
 
   /** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
-  get vatPercent(): IntTypeMap[IntTypeName] | undefined {
+  get vatPercent(): NumberType<Client> | undefined {
     return this._vatPercent;
   }
 
   /** The percent value of the VAT multiplied by 100, so `25%` becomes `2500`. */
-  setVatPercent(newVatPercent: IntTypeMap[IntTypeName]): this {
+  setVatPercent(newVatPercent: NumberType<Client>): this {
     this._vatPercent = newVatPercent;
     return this;
   }
@@ -144,14 +148,25 @@ export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
     return this;
   }
 
-  /** The 4 decimal precision quantity of order items being purchased. */
+  /** The 4 decimal precision quantity of order items being purchased. Scaled by 10000 */
   get quantity(): number {
     return this._quantity;
   }
 
-  /** The 4 decimal precision quantity of order items being purchased. */
-  setQuantity(newQuantity: number): this {
-    this._quantity = newQuantity;
+  /**
+   * The 4 decimal precision quantity of order items being purchased.
+   *
+   * @param fraction If `true`, the quantity will be interpreted as a fraction, and treated as scaled by 10000. E.g. `5` will be treated as `0.0005`.
+   * if `false`, the quantity will be treated as a whole number. E.g. `5` will be treated as `5`.
+   * @returns The order item instance.
+   */
+  setQuantity(newQuantity: NumberType<Client>, fraction = false): this {
+    this._quantity = fraction
+      ? newQuantity
+      : ((newQuantity * this.QUANTITY_PRECISION) as NumberType<Client>);
+    if (typeof this._quantity === 'number') {
+      this._quantity = Math.round(this._quantity) as NumberType<Client>;
+    }
     return this;
   }
 
@@ -182,14 +197,14 @@ export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
     return this;
   }
 
-  get amount(): bigint | undefined {
+  get amount(): NumberType<Client> | undefined {
     const { unitPrice } = this;
     if (unitPrice == null) return undefined;
-    return (
-      (unitPrice *
-        BigInt(Math.floor(this.quantity * Number(QUANTITY_PRECISION)))) /
-      QUANTITY_PRECISION
-    );
+    const val = ((unitPrice * this.quantity) /
+      this.QUANTITY_PRECISION) as NumberType<Client>;
+    return typeof val === 'number'
+      ? (Math.round(val) as NumberType<Client>)
+      : val;
   }
 
   get displayQuantity(): string {
@@ -240,7 +255,11 @@ export default class OrderItemFactory<IntTypeName extends keyof IntTypeMap> {
     return errors;
   }
 
-  toJSON(): OrderItemFactoryOptions & { amount: number } {
+  toJSON(): OrderItemFactoryOptions & {
+    amount: number;
+    unitPrice: number;
+    vatPercent: number;
+  } {
     return {
       name: this.name,
       type: this.type,
