@@ -89,6 +89,11 @@ export class SwedbankPayClient<IntTypeName extends keyof IntTypeMap> {
     typeof LiveEntities.PaymentOrder<SwedbankPayClient<IntTypeName>>
   >;
 
+  /** Bound version of the {@link LiveEntities.PaymentOrder PaymentOrder} class with client constructor argument prepopulated */
+  readonly Payment: BoundConstructor<
+    typeof LiveEntities.Payment<SwedbankPayClient<IntTypeName>>
+  >;
+
   /**
    * Creates a new SwedbankPayClient instance.
    * @param options the options for the client
@@ -129,28 +134,25 @@ export class SwedbankPayClient<IntTypeName extends keyof IntTypeMap> {
     this.PaymentOrderFactory = Factories.PaymentOrderFactory.bind(null, this);
     this.OrderItemFactory = Factories.OrderItemFactory.bind(null, this);
     this.PayerFactory = Factories.PayerFactory.bind(null, this);
-    const TypedPaymentOrder = LiveEntities.PaymentOrder as {
-      new (
-        ...params: ConstructorParameters<
-          typeof LiveEntities.PaymentOrder
-        > extends [SwedbankPayClient<keyof IntTypeMap>, ...infer Rest]
-          ? [client: SwedbankPayClient<IntTypeName>, ...rest: Rest]
-          : never
-      ): LiveEntities.PaymentOrder<IntTypeName>;
-      load(
-        ...params: Parameters<
-          typeof LiveEntities.PaymentOrder['load']
-        > extends [SwedbankPayClient<keyof IntTypeMap>, ...infer Rest]
-          ? [client: SwedbankPayClient<IntTypeName>, ...rest: Rest]
-          : never
-      ): Promise<LiveEntities.PaymentOrder<IntTypeName>>;
-    };
-    this.PaymentOrder = Object.assign(TypedPaymentOrder.bind(null, this), {
-      load: TypedPaymentOrder.load.bind(LiveEntities.PaymentOrder, this),
-    });
+    this.PaymentOrder = bindLiveEntityConstructor(
+      this,
+      LiveEntities.PaymentOrder,
+    );
+    this.Payment = bindLiveEntityConstructor(this, LiveEntities.Payment);
   }
 
-  asIntType(num: IntTypeMap[keyof IntTypeMap]): NumberType<this> {
+  asIntType(num: IntTypeMap[keyof IntTypeMap]): NumberType<this>;
+  asIntType(num: IntTypeMap[keyof IntTypeMap] | null): NumberType<this> | null;
+  asIntType(
+    num: IntTypeMap[keyof IntTypeMap] | undefined,
+  ): NumberType<this> | undefined;
+  asIntType(
+    num: IntTypeMap[keyof IntTypeMap] | null | undefined,
+  ): NumberType<this> | null | undefined;
+  asIntType(
+    num: IntTypeMap[keyof IntTypeMap] | null | undefined,
+  ): NumberType<this> | null | undefined {
+    if (num == null) return num;
     return integerMap[this.intType](num) as NumberType<this>;
   }
 

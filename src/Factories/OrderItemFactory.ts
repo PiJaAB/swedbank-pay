@@ -149,7 +149,7 @@ export default class OrderItemFactory<
   }
 
   /** The 4 decimal precision quantity of order items being purchased. Scaled by 10000 */
-  get quantity(): number {
+  get quantity(): NumberType<Client> {
     return this._quantity;
   }
 
@@ -208,7 +208,10 @@ export default class OrderItemFactory<
   }
 
   get displayQuantity(): string {
-    const bigIntVal = BigInt(Math.floor(this.quantity));
+    const bigIntVal =
+      typeof this.quantity !== 'bigint'
+        ? BigInt(Math.floor(this.quantity))
+        : this.quantity;
     const fractions = BigInt(
       Math.round((this.quantity % 1) * Number(QUANTITY_PRECISION)),
     );

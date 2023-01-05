@@ -3,6 +3,7 @@ import {
   PaymentOrderResponse,
   requestData,
   PaymentInstrument,
+  IntTypeMap,
 } from '../Types';
 import PayerFactory, { PayerFactoryOptions } from './PayerFactory';
 import OrderItemFactory, {
@@ -11,9 +12,11 @@ import OrderItemFactory, {
 } from './OrderItemFactory';
 import InvalidEntityError from '../Errors/InvalidEntityError';
 import type SwedbankPayClient from '../SwedbankPayClient';
-import { PaymentOrder } from '../LiveEntities';
+import LiveEntities from '../LiveEntities';
 
-export type Serialized = PaymentOrderFactory['toJSON'] extends () => infer Q
+export type Serialized = PaymentOrderFactory<
+  SwedbankPayClient<never>
+>['toJSON'] extends () => infer Q
   ? Q
   : never;
 
@@ -43,7 +46,9 @@ export type PaymentOrderFactoryOptions = {
   readonly orderItems?: ReadonlyArray<OrderItemFactoryOptions>;
 };
 
-export default class PaymentOrderFactory {
+export default class PaymentOrderFactory<
+  Client extends SwedbankPayClient<keyof IntTypeMap>,
+> {
   private _currency: string | undefined;
   private _description: string | undefined;
   private _generatePaymentToken: boolean | undefined;
@@ -71,15 +76,15 @@ export default class PaymentOrderFactory {
     | undefined;
   private _cancelUrl: requestData.PaymentOrder['urls']['cancelUrl'];
 
-  private _orderItems: OrderItemFactory[];
+  private _orderItems: OrderItemFactory<Client>[];
   /** Factory for the payer of the purchase */
-  readonly payer: PayerFactory;
+  readonly payer: PayerFactory<Client>;
   /** The client */
-  readonly client: SwedbankPayClient;
+  readonly client: Client;
 
-  constructor(client: SwedbankPayClient, options?: PaymentOrderFactoryOptions);
+  constructor(client: Client, options?: PaymentOrderFactoryOptions);
   constructor(
-    client: SwedbankPayClient,
+    client: Client,
     { paymentorder, orderItems }: PaymentOrderFactoryOptions = {},
   ) {
     this._currency = paymentorder?.currency;
@@ -309,7 +314,7 @@ export default class PaymentOrderFactory {
   }
 
   /** The array of URLs valid for embedding of Swedbank Pay Hosted Views. */
-  get orderItems(): ReadonlyArray<OrderItemFactory> {
+  get orderItems(): ReadonlyArray<OrderItemFactory<Client>> {
     return this._orderItems;
   }
 
@@ -319,7 +324,9 @@ export default class PaymentOrderFactory {
    * @returns The purchase factory for chaining.
    */
   setOrderItems(
-    newOrderItems?: ReadonlyArray<OrderItemFactory | OrderItemFactoryOptions>,
+    newOrderItems?: ReadonlyArray<
+      OrderItemFactory<Client> | OrderItemFactoryOptions
+    >,
   ) {
     this._orderItems =
       newOrderItems != null
@@ -337,7 +344,9 @@ export default class PaymentOrderFactory {
    * @param newHostUrls The new hostUrls string
    * @returns The purchase factory for chaining.
    */
-  addOrderItem(...newHostUrls: (OrderItemFactory | OrderItemFactoryOptions)[]) {
+  addOrderItem(
+    ...newHostUrls: (OrderItemFactory<Client> | OrderItemFactoryOptions)[]
+  ) {
     this._orderItems.push(
       ...newHostUrls.map((item) =>
         item instanceof OrderItemFactory
@@ -642,7 +651,9 @@ export default class PaymentOrderFactory {
    * and makes a request for the purchase to be created.
    * @returns A live entity of the paymentorder.
    */
-  async makePurchaseRequest(): Promise<PaymentOrder> {
+  async makePurchaseRequest(): Promise<
+    InstanceType<typeof LiveEntities.PaymentOrder<Client>>
+  > {
     const errors = this.getErrors();
     const orderItems = this.orderItems.map((o, i) => {
       errors.push(
@@ -701,6 +712,6 @@ export default class PaymentOrderFactory {
       '/psp/paymentorders',
       purchase,
     );
-    return new PaymentOrder(this.client, res.data, new Date());
+    return new LiveEntities.PaymentOrder(this.client, res.data, new Date());
   }
 }
