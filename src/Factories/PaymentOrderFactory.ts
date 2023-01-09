@@ -1,4 +1,9 @@
-import { PaymentOrderOperation, responseData, requestData, PaymentInstrument } from '../Types';
+import {
+  PaymentOrderOperation,
+  responseData,
+  requestData,
+  PaymentInstrument,
+} from '../Types';
 import PayerFactory, { PayerFactoryOptions } from './PayerFactory';
 import OrderItemFactory, {
   QUANTITY_PRECISION,
@@ -595,8 +600,10 @@ export default class PaymentOrderFactory {
     return errors;
   }
 
-  private serialize(): PaymentOrderFactoryOptions['paymentorder'] {
-    const payer = this.payer.toJSON();
+  private serialize(
+    clean?: boolean,
+  ): PaymentOrderFactoryOptions['paymentorder'] {
+    const payer = this.payer.toJSON(clean);
     const ret = {
       generatePaymentToken: this._generatePaymentToken,
       generateRecurrenceToken: this._generateRecurrenceToken,
@@ -624,10 +631,10 @@ export default class PaymentOrderFactory {
    * Serializes the purchase to a JSON-encodeable object.
    * @returns A serialized object able to trivially be converted to JSON
    */
-  toJSON(): PaymentOrderFactoryOptions {
+  toJSON(clean?: boolean): PaymentOrderFactoryOptions {
     const orderItems = this.orderItems.map((o) => o.toJSON());
     return {
-      paymentorder: this.serialize(),
+      paymentorder: this.serialize(clean),
       orderItems,
     };
   }
@@ -666,14 +673,14 @@ export default class PaymentOrderFactory {
     const description = (this.description ?? this.defaultDescription) as string;
 
     const paymentorder = (
-      this.serialize as () => Omit<
+      this.serialize as (clean?: boolean) => Omit<
         requestData.PaymentOrder,
         'productName' | 'payeeInfo' | 'amount' | 'vatAmount' | 'description'
       > & {
         payeeInfo: Omit<requestData.PaymentOrder['payeeInfo'], 'payeeId'>;
         description: string | undefined;
       }
-    )();
+    )(true);
 
     const purchase = {
       paymentorder: {
