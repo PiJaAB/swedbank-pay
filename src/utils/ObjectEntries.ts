@@ -42,6 +42,6 @@ export type Entries<T> = {
  * (Wrapper for Object.entries which maintains typing information)
  * @param o Object that contains the properties and methods.
  */
-export function ObjectEntries<T>(o: T): Entries<T> {
+export function ObjectEntries<T extends object>(o: T): Entries<T> {
   return Object.entries(o) as Entries<T>;
 }
