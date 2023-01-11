@@ -238,6 +238,12 @@ export default class PaymentOrder {
     if (captureOperation == null) {
       throw new Error('No capture operation available');
     }
+    if (
+      this.remainingCaptureAmount == null ||
+      this.remainingCaptureAmount === 0
+    ) {
+      throw new Error('No remaining reversal amount');
+    }
     let orderItems = await this.orderItems?.getOrderItemList();
     if (orderItems != null && orderItems.length === 0) orderItems = undefined;
     orderItems =
@@ -268,6 +274,11 @@ export default class PaymentOrder {
           [0n, 0n],
         )
         .map((e) => Number(e));
+      if (amount > this.remainingCaptureAmount) {
+        throw new Error(
+          'OrderItems amount sum exceeds remaining capture amount',
+        );
+      }
       transaction = {
         description,
         amount,
@@ -293,6 +304,100 @@ export default class PaymentOrder {
     }
     return this.client.axios
       .post(captureOperation.href, {
+        transaction,
+      })
+      .then(() => this.refresh(true).catch(() => this));
+  }
+
+  async reversal(
+    {
+      description,
+      payeeReference,
+      receiptReference,
+    }: {
+      description: string;
+      payeeReference: string;
+      receiptReference?: string;
+    },
+    mapper?: (
+      orderItem: responseData.OrderItemListEntry,
+      index: number,
+      list: ReadonlyArray<responseData.OrderItemListEntry>,
+    ) =>
+      | responseData.OrderItemListEntry
+      | null
+      | PromiseLike<responseData.OrderItemListEntry | null>,
+  ) {
+    const reversalOperation =
+      this.operations.reversal ??
+      (await this.refresh().then(
+        ({ operations }) => operations.reversal ?? null,
+      ));
+    if (reversalOperation == null) {
+      throw new Error('No reversal operation available');
+    }
+    if (
+      this.remainingReversalAmount == null ||
+      this.remainingReversalAmount === 0
+    ) {
+      throw new Error('No remaining reversal amount');
+    }
+    let orderItems = await this.orderItems?.getOrderItemList();
+    if (orderItems != null && orderItems.length === 0) orderItems = undefined;
+    orderItems =
+      orderItems && mapper != null
+        ? await Promise.all(orderItems.map(mapper)).then((list) =>
+            list.filter((e): e is responseData.OrderItemListEntry => e != null),
+          )
+        : orderItems;
+    let transaction: {
+      description: string;
+      amount: number;
+      vatAmount: number;
+      payeeReference: string;
+      receiptReference: string | undefined;
+      orderItems?: readonly OrderItemListEntry[];
+    };
+    if (orderItems != null) {
+      if (orderItems.length === 0) {
+        throw new Error('Need to include at least one order item if specified');
+      }
+      const [amount, vatAmount] = orderItems
+        .reduce(
+          (acc, cur) => {
+            acc[0] += BigInt(cur.amount);
+            acc[1] += BigInt(cur.vatAmount);
+            return acc;
+          },
+          [0n, 0n],
+        )
+        .map((e) => Number(e));
+      if (amount > this.remainingReversalAmount) {
+        throw new Error(
+          'OrderItems amount sum exceeds remaining reversal amount',
+        );
+      }
+      transaction = {
+        description,
+        amount,
+        vatAmount,
+        payeeReference,
+        receiptReference,
+        orderItems,
+      };
+    } else {
+      const amount = this.remainingReversalAmount;
+      const vatAmount = Math.round(amount * (this.vatAmount / this.amount));
+      transaction = {
+        description,
+        amount,
+        vatAmount,
+        payeeReference,
+        receiptReference,
+      };
+    }
+    return this.client.axios
+      .post(reversalOperation.href, {
         transaction,
       })
       .then(() => this.refresh(true).catch(() => this));
