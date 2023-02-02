@@ -49,11 +49,51 @@ export default class Paid extends PaymentOrderEntity<
   }
 
   /**
+   * Get the transactionType, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getTransactionType(
+    forceFresh?: boolean,
+  ): Promise<'Authorization' | 'Sale' | 'Verification' | null> {
+    return this.getAll(forceFresh).then(
+      ({ transactionType }) => transactionType ?? null,
+    );
+  }
+
+  /**
    * Get the amount, fetches from Swedbank Pay backend if necessary.
    * @param forceFresh - Force a refresh of the historyList from the backend
    */
   getAmount(forceFresh?: boolean): Promise<number | null> {
     return this.getAll(forceFresh).then(({ amount }) => amount ?? null);
+  }
+
+  /**
+   * Get the submittedAmount, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getSubmittedAmount(forceFresh?: boolean): Promise<number | null> {
+    return this.getAll(forceFresh).then(
+      ({ submittedAmount }) => submittedAmount ?? null,
+    );
+  }
+
+  /**
+   * Get the feeAmount, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getFeeAmount(forceFresh?: boolean): Promise<number | null> {
+    return this.getAll(forceFresh).then(({ feeAmount }) => feeAmount ?? null);
+  }
+
+  /**
+   * Get the discountAmount, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh of the historyList from the backend
+   */
+  getDiscountAmount(forceFresh?: boolean): Promise<number | null> {
+    return this.getAll(forceFresh).then(
+      ({ discountAmount }) => discountAmount ?? null,
+    );
   }
 
   /**

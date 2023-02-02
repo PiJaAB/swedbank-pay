@@ -1,6 +1,9 @@
 import SwedbankPayClient from '../../SwedbankPayClient';
 import { PaymentOrderOperation, responseData } from '../../Types';
-import { OrderItemListEntry } from '../../Types/responseData';
+import {
+  FinancialTransactionListEntry,
+  OrderItemListEntry,
+} from '../../Types/responseData';
 import Aborted from './Aborted';
 import Cancelled from './Cancelled';
 import Failed from './Failed';
@@ -204,11 +207,36 @@ export default class PaymentOrder {
     return new this(client, res.data, new Date());
   }
 
+  async getCapturedAmount(excludeSingleStep = false) {
+    const list = await this.financialTransactions.getFinancialTransactionList();
+    const types: readonly FinancialTransactionListEntry['type'][] =
+      excludeSingleStep ? ['Capture'] : ['Capture', 'Sale'];
+    return list.reduce(
+      (acc, entry) => (types.includes(entry.type) ? acc + entry.amount : acc),
+      0,
+    );
+  }
+
   /**
    * Whether this paymentOrder is paid and captured in full.
    */
-  get fullyCaptured() {
-    return this.status === 'Paid' && !this.remainingCaptureAmount;
+  async isFullyCaptured(excludeSingleStep = false) {
+    return (await this.getCapturedAmount(excludeSingleStep)) === this.amount;
+  }
+
+  async getReversedAmount() {
+    const list = await this.financialTransactions.getFinancialTransactionList();
+    return list.reduce(
+      (acc, entry) => (entry.type === 'Reversal' ? acc + entry.amount : acc),
+      0,
+    );
+  }
+
+  /**
+   * Whether this paymentOrder is fully reversed
+   */
+  async isFullyReversed() {
+    return (await this.getReversedAmount()) === this.amount;
   }
 
   async capture(
