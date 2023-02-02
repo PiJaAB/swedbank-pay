@@ -7,6 +7,7 @@ export interface PaymentOrderResponseData {
   readonly operation: PaymentOrderOperation;
   readonly status:
     | 'Initialized'
+    | 'Cancelled'
     | 'Ready'
     | 'Pending'
     | 'Failed'

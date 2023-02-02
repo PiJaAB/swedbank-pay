@@ -113,6 +113,7 @@ export default class PaymentOrder {
   readonly operation: PaymentOrderOperation;
   readonly status:
     | 'Initialized'
+    | 'Cancelled'
     | 'Ready'
     | 'Pending'
     | 'Paid'
