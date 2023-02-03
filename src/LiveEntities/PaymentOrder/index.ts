@@ -237,6 +237,7 @@ export default class PaymentOrder {
    * Whether this paymentOrder is fully reversed
    */
   async isFullyReversed() {
+    if (this.amount === 0) return false;
     return (await this.getReversedAmount()) === this.amount;
   }
 
