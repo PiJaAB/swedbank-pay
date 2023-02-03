@@ -59,6 +59,6 @@ export interface FinancialTransactionsResponse {
   /** The financial transactions object. */
   readonly financialTransactions: MaybePopulated<{
     /** The array of financial transactions. */
-    readonly financialTransactionList: ReadonlyArray<FinancialTransactionListEntry>;
+    readonly financialTransactionsList: ReadonlyArray<FinancialTransactionListEntry>;
   }>;
 }

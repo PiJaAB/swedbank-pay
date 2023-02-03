@@ -20,7 +20,7 @@ export default class FinancialTransactions extends PaymentOrderEntity<
     forceFresh?: boolean,
   ): Promise<ReadonlyArray<responseData.FinancialTransactionListEntry>> {
     return this.getAll(forceFresh).then(
-      ({ financialTransactionList }) => financialTransactionList ?? [],
+      ({ financialTransactionsList }) => financialTransactionsList ?? [],
     );
   }
 }
