@@ -14,7 +14,7 @@ export default class Metadata extends PaymentOrderEntity<
 
   /**
    * Get the value for a certain key. Fetching from swedbank pay if needed.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getValue(
     key: string,

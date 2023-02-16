@@ -49,7 +49,7 @@ export default abstract class LazyEntity<
   /**
    * Get the full response from the object.
    * Fetches from Swedbank Pay if necessary.
-   * @param forceFresh - Force a refresh from the backend before resolving
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getAll(forceFresh?: boolean): Promise<ResData[Key]> {
     if (!forceFresh && this._response != null) {

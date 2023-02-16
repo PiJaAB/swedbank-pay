@@ -14,7 +14,7 @@ export default class Urls extends PaymentOrderEntity<
 
   /**
    * Get the completeUrl, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getCompleteUrl(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -24,7 +24,7 @@ export default class Urls extends PaymentOrderEntity<
 
   /**
    * Get the cancelUrl, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getCancelUrl(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(({ cancelUrl }) => cancelUrl ?? null);
@@ -32,7 +32,7 @@ export default class Urls extends PaymentOrderEntity<
 
   /**
    * Get the paymentUrl, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getPaymentUrl(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(({ paymentUrl }) => paymentUrl ?? null);
@@ -40,7 +40,7 @@ export default class Urls extends PaymentOrderEntity<
 
   /**
    * Get the callbackUrl, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getCallbackUrl(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -50,7 +50,7 @@ export default class Urls extends PaymentOrderEntity<
 
   /**
    * Get the termsOfServiceUrl, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getTermsOfServiceUrl(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -60,7 +60,7 @@ export default class Urls extends PaymentOrderEntity<
 
   /**
    * Get the hosts url list, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getHostUrls(forceFresh?: boolean): Promise<ReadonlyArray<string>> {
     return this.getAll(forceFresh).then(({ hostUrls }) => hostUrls ?? []);

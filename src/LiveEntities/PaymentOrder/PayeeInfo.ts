@@ -15,7 +15,7 @@ export default class PayeeInfo extends PaymentOrderEntity<
   /**
    * This is the unique id that identifies this payee (like merchant) set by Swedbank Pay
    * Fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh from the backend before resolving
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getPayeeId(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(({ payeeId }) => payeeId ?? null);
@@ -24,7 +24,7 @@ export default class PayeeInfo extends PaymentOrderEntity<
   /**
    * The payee name (like merchant name) that will be displayed when redirected to Swedbank Pay.
    * Fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh from the backend before resolving
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getPayeeName(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(({ payeeName }) => payeeName ?? null);
@@ -35,7 +35,7 @@ export default class PayeeInfo extends PaymentOrderEntity<
    * It is set per operation to ensure an exactly-once delivery of a transactional operation.
    * See [`payeeReference`](https://developer.swedbankpay.com/checkout-v3/payments-only/features/technical-reference/payee-reference) for details.
    * Fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh from the backend before resolving
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getPayeeReference(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -47,7 +47,7 @@ export default class PayeeInfo extends PaymentOrderEntity<
    * A product category or number sent in from the payee/merchant.
    * It is passed through the payment process and may be used in the settlement process.
    * Fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getProductCategory(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -58,7 +58,7 @@ export default class PayeeInfo extends PaymentOrderEntity<
   /**
    * The order reference should reflect the order reference found in the merchant’s systems.
    * Fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh from the backend before resolving
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getOrderReference(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(

@@ -14,7 +14,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the reason for cancellation, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getCancelReason(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -24,7 +24,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the payment instrument, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getInstrument(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(({ instrument }) => instrument ?? null);
@@ -32,7 +32,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the payment number, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getNumber(forceFresh?: boolean): Promise<number | null> {
     return this.getAll(forceFresh).then(({ number }) => number ?? null);
@@ -40,7 +40,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the payeeReference, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getPayeeReference(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -50,7 +50,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the orderReference, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getOrderReference(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(
@@ -60,7 +60,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the amount, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getAmount(forceFresh?: boolean): Promise<number | null> {
     return this.getAll(forceFresh).then(({ amount }) => amount ?? null);
@@ -68,7 +68,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the paymentTokens, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getTokens(
     forceFresh?: boolean,
@@ -78,7 +78,7 @@ export default class Cancelled extends PaymentOrderEntity<
 
   /**
    * Get the details, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getDetails(forceFresh?: boolean): Promise<{
     readonly nonPaymentToken?: string | undefined;

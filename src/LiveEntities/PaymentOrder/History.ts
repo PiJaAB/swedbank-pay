@@ -14,7 +14,7 @@ export default class History extends PaymentOrderEntity<
 
   /**
    * Get the history list, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getHistoryList(
     forceFresh?: boolean,
