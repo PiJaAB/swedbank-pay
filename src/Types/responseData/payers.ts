@@ -39,6 +39,15 @@ export interface PayersResponse {
   readonly payer: MaybePopulated<{
     /** The name of the payer */
     readonly name: string;
+    /** The merchant id of the payer */
+    readonly reference?: string;
+    /** The phone number of the payer */
+    readonly msisdn?: string;
+    /** Hashed fields for privacy reasons */
+    readonly hashedFields?: {
+      /** A hashed version of msisdn */
+      readonly msisdnHash?: string;
+    };
     /** Device infromation about the browser that used Swedbank Pay's payment service */
     readonly device?: PayerDeviceResponse;
   }>;
