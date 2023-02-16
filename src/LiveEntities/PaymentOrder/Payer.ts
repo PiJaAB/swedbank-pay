@@ -14,15 +14,31 @@ export default class Payer extends PaymentOrderEntity<
 
   /**
    * Get the name of the payer, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getName(forceFresh?: boolean): Promise<string | null> {
     return this.getAll(forceFresh).then(({ name }) => name ?? null);
   }
 
   /**
+   * Get the msisdn of the payer, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
+   */
+  getMsisdn(forceFresh?: boolean): Promise<string | null> {
+    return this.getAll(forceFresh).then(({ msisdn }) => msisdn ?? null);
+  }
+
+  /**
+   * Get the reference of the payer, fetches from Swedbank Pay backend if necessary.
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
+   */
+  getReference(forceFresh?: boolean): Promise<string | null> {
+    return this.getAll(forceFresh).then(({ reference }) => reference ?? null);
+  }
+
+  /**
    * Get the device info of the payer, fetches from Swedbank Pay backend if necessary.
-   * @param forceFresh - Force a refresh of the historyList from the backend
+   * @param forceFresh - Force a refresh from Swedbank Pay before resolving
    */
   getDevice(
     forceFresh?: boolean,
